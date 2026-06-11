@@ -789,25 +789,56 @@ function renderCatalog() {
       </div>
 
       <!-- Filtros -->
-      <div class="mb-5 space-y-2">
+      <div class="mb-5 space-y-2" id="catalog-filters">
         <div class="flex flex-wrap gap-2 items-center">
-          <span class="t-caps text-ink-3">Categoria:</span>
+          <span class="t-caps text-ink-3 mr-1">Categoria</span>
           ${categorias.map(c => `
-            <button onclick="toggleCatalogFilter('categorias','${escHtml(c)}')" class="filter-chip ${appState.catalogFiltros.categorias.includes(c) ? 'active' : ''}">${escHtml(c)}</button>
+            <button onclick="toggleCatalogFilter('categorias','${escHtml(c)}')"
+              class="filter-chip ${appState.catalogFiltros.categorias.includes(c) ? 'active' : ''}">
+              ${escHtml(c)}
+            </button>
           `).join('')}
         </div>
+
         <div class="flex flex-wrap gap-2 items-center">
-          <span class="t-caps text-ink-3">Tamanho:</span>
+          <span class="t-caps text-ink-3 mr-1">Tamanho</span>
           ${tamanhos.map(t => `
-            <button onclick="toggleCatalogFilter('tamanhos','${escHtml(t)}')" class="filter-chip ${appState.catalogFiltros.tamanhos.includes(t) ? 'active' : ''}">${escHtml(t)}</button>
+            <button onclick="toggleCatalogFilter('tamanhos','${escHtml(t)}')"
+              class="filter-chip ${appState.catalogFiltros.tamanhos.includes(t) ? 'active' : ''}">
+              ${escHtml(t)}
+            </button>
           `).join('')}
         </div>
+
         <div class="flex flex-wrap gap-2 items-center">
-          <span class="t-caps text-ink-3">Status:</span>
-          ${['normal','baixo','critico'].map(s => `
-            <button onclick="toggleCatalogFilter('status','${s}')" class="filter-chip ${appState.catalogFiltros.status.includes(s) ? 'active' : ''}">${statusLabel(s)}</button>
+          <span class="t-caps text-ink-3 mr-1">Cor</span>
+          ${cores.map(c => `
+            <button onclick="toggleCatalogFilter('cores','${escHtml(c)}')"
+              class="filter-chip ${appState.catalogFiltros.cores.includes(c) ? 'active' : ''}">
+              ${escHtml(c)}
+            </button>
           `).join('')}
-          <input type="text" class="input ml-2" style="width:200px;padding:5px 10px;font-size:12px" placeholder="Ref., SKU, produto..." value="${escHtml(appState.catalogFiltros.search)}" oninput="setCatalogSearch(this.value)">
+        </div>
+
+        <div class="flex flex-wrap gap-2 items-center">
+          <span class="t-caps text-ink-3 mr-1">Status</span>
+          ${['normal','baixo','critico'].map(s => `
+            <button onclick="toggleCatalogFilter('status','${s}')"
+              class="filter-chip ${appState.catalogFiltros.status.includes(s) ? 'active' : ''}">
+              ${statusLabel(s)}
+            </button>
+          `).join('')}
+          <input type="text" class="input ml-2"
+            style="width:200px;padding:5px 10px;font-size:12px"
+            placeholder="Ref., SKU, produto, cor..."
+            value="${escHtml(appState.catalogFiltros.search)}"
+            oninput="setCatalogSearch(this.value)">
+          ${hasActiveCatalogFilters() ? `
+            <button onclick="clearCatalogFilters()"
+              class="btn btn-ghost btn-sm ml-2 text-danger border-danger/30 hover:bg-danger-s">
+              ${svgIcon('x', 12)} Limpar filtros
+            </button>
+          ` : ''}
         </div>
       </div>
 
@@ -830,6 +861,30 @@ function toggleCatalogFilter(key, value) {
 function setCatalogSearch(val) {
   appState.catalogFiltros.search = val
   document.getElementById('catalog-table-container').innerHTML = renderCatalogTable()
+  const filtersEl = document.getElementById('catalog-filters')
+  if (filtersEl) {
+    const clearBtn = filtersEl.querySelector('button[onclick="clearCatalogFilters()"]')
+    if (hasActiveCatalogFilters() && !clearBtn) {
+      renderCatalog()
+    } else if (!hasActiveCatalogFilters() && clearBtn) {
+      renderCatalog()
+    }
+  }
+}
+
+function hasActiveCatalogFilters() {
+  const f = appState.catalogFiltros
+  return f.categorias.length > 0 || f.tamanhos.length > 0 ||
+         f.cores.length > 0      || f.estacoes.length > 0 ||
+         f.status.length > 0     || f.search !== ''
+}
+
+function clearCatalogFilters() {
+  appState.catalogFiltros = {
+    categorias: [], tamanhos: [], cores: [],
+    estacoes: [], status: [], search: ''
+  }
+  renderCatalog()
 }
 
 function filteredProdutos() {
@@ -908,15 +963,25 @@ function renderCatalogRow(p) {
 
 function toggleGradeVariacoes(produtoId) {
   appState.catalogoExpandido[produtoId] = !appState.catalogoExpandido[produtoId]
+
   const tbody = document.getElementById('catalog-tbody')
   if (!tbody) return
   const produto = PRODUTOS.find(p => p.id === produtoId)
   if (!produto) return
-  const rows = tbody.querySelectorAll(`#row-${produtoId}, #grade-${produtoId}, .grade-rows-${produtoId}`)
-  rows.forEach(r => r.remove())
+
+  // Capturar ponto de inserção ANTES de remover qualquer linha
+  const gradeRow = document.getElementById(`grade-${produtoId}`)
+  const referenceNode = gradeRow ? gradeRow.nextElementSibling : null
+
+  tbody.querySelectorAll(
+    `#row-${produtoId}, #grade-${produtoId}, .grade-rows-${produtoId}`
+  ).forEach(r => r.remove())
+
   const temp = document.createElement('tbody')
   temp.innerHTML = renderCatalogRow(produto)
-  Array.from(temp.children).forEach(child => tbody.appendChild(child))
+  Array.from(temp.children).forEach(child => {
+    tbody.insertBefore(child, referenceNode)
+  })
 }
 
 function renderGradeVariacoesRow(p) {
@@ -924,7 +989,6 @@ function renderGradeVariacoesRow(p) {
     <tr id="grade-${p.id}" class="grade-rows-${p.id}">
       <td colspan="9" style="padding:0">
         <div class="variacao-grade animate-expand">
-          <p class="text-[11px] text-ink-3 italic px-4 py-2">O estoque real é controlado por tamanho e cor de cada variação.</p>
           <table style="width:100%;border-collapse:collapse">
             <thead>
               <tr style="background:#EEECEA">
@@ -1004,11 +1068,11 @@ function renderProductForm() {
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Col 1: Info base + preços -->
-        <div class="lg:col-span-1 space-y-5">
-          <!-- Produto base -->
-          <div class="card" style="padding:24px">
+      <div class="product-form-grid">
+
+        <!-- COLUNA ESQUERDA — Produto Base (maior) -->
+        <div style="height:100%">
+          <div class="card" style="padding:24px;height:100%">
             <p class="t-caps text-ink-3 mb-4">Produto base</p>
             <div class="space-y-4">
               <div>
@@ -1046,28 +1110,13 @@ function renderProductForm() {
               </div>
             </div>
           </div>
-
-          <!-- Preços base (admin/estoque) -->
-          ${isAdminOrEstoque ? `
-          <div class="card" style="padding:24px">
-            <p class="t-caps text-ink-3 mb-4">Preços base</p>
-            <div class="space-y-4">
-              <div>
-                <label class="input-label" for="pf-preco">Preço de venda (R$)</label>
-                <input id="pf-preco" class="input" type="number" step="0.01" placeholder="0,00" value="${precoValue}">
-              </div>
-              <div>
-                <label class="input-label" for="pf-custo">Custo unitário (R$)</label>
-                <input id="pf-custo" class="input" type="number" step="0.01" placeholder="0,00" value="${custoValue}">
-              </div>
-            </div>
-          </div>
-          ` : ''}
         </div>
 
-        <!-- Col 2: Grade de variações -->
-        <div class="lg:col-span-2">
-          <div class="card" style="padding:24px">
+        <!-- COLUNA DIREITA — Grade + Preços (menor, empilhados) -->
+        <div class="space-y-5" style="display:flex;flex-direction:column;height:100%">
+
+          <!-- Grade de variações -->
+          <div class="card" style="padding:24px;flex:1">
             <div class="flex items-center justify-between mb-1">
               <p class="t-caps text-ink-3">Grade de variações</p>
               <div class="flex gap-2">
@@ -1077,19 +1126,44 @@ function renderProductForm() {
             </div>
             <div id="grade-add-tamanho-area"></div>
             <div id="grade-add-cor-area"></div>
-            <p class="text-[12px] text-ink-3 mb-4">Cada célula da grade representa uma variação com estoque próprio.</p>
             <div id="grade-table-container">${renderGradeFormTable()}</div>
           </div>
+
+          <!-- Preços base (admin/estoque) -->
+          ${isAdminOrEstoque ? `
+          <div class="card" style="padding:14px 18px">
+            <p class="t-caps text-ink-3 mb-3">Preços base</p>
+            <div class="space-y-3">
+              <div>
+                <label class="input-label" for="pf-custo">Custo unitário (R$)</label>
+                <input id="pf-custo" class="input" style="min-height:38px;padding:7px 10px" type="number" step="0.01" placeholder="0,00" value="${custoValue}" oninput="calcPrecoFromMarkup()">
+              </div>
+              <div class="p-2 rounded-lg bg-accent-s border border-accent/20">
+                <label class="input-label" for="pf-markup">Markup sobre custo (%)</label>
+                <div class="flex items-center gap-2">
+                  <input id="pf-markup" class="input" style="flex:1;min-height:38px;padding:7px 10px" type="number" step="1" min="0" placeholder="Ex: 150" oninput="calcPrecoFromMarkup()">
+                  <span class="text-[13px] font-medium text-accent flex-shrink-0">%</span>
+                </div>
+                <p id="pf-markup-preview" class="text-[11px] text-ink-3 mt-1.5 hidden"></p>
+              </div>
+              <div>
+                <label class="input-label" for="pf-preco">Preço de venda (R$)</label>
+                <input id="pf-preco" class="input" style="min-height:38px;padding:7px 10px" type="number" step="0.01" placeholder="0,00" value="${precoValue}">
+              </div>
+            </div>
+          </div>
+          ` : ''}
         </div>
       </div>
 
       <!-- Footer -->
       <div class="flex justify-end gap-3 mt-6">
         <button onclick="navigateTo('screen-catalog')" class="btn btn-ghost">Cancelar</button>
-        <button onclick="saveProduct()" class="btn btn-primary">${svgIcon('check',13)} Salvar Produto</button>
+        <button onclick="saveProduct('${isEdit ? (sourceId || '') : ''}')" class="btn btn-primary">${svgIcon('check',13)} Salvar Produto</button>
       </div>
     </div>
   `
+  if (isEdit) setTimeout(preencherMarkupInicial, 0)
 }
 
 function renderGradeFormTable() {
@@ -1266,6 +1340,40 @@ function renderProductFormGradeOnly() {
   }
 }
 
+function calcPrecoFromMarkup() {
+  const custo  = parseFloat(document.getElementById('pf-custo')?.value) || 0
+  const markup = parseFloat(document.getElementById('pf-markup')?.value) || 0
+  const precoInput = document.getElementById('pf-preco')
+  const previewEl  = document.getElementById('pf-markup-preview')
+
+  if (custo > 0 && markup >= 0 && precoInput) {
+    const preco = custo * (1 + markup / 100)
+    precoInput.value = preco.toFixed(2)
+
+    if (previewEl) {
+      const custoFmt = 'R$ ' + custo.toFixed(2).replace('.', ',')
+      const precoFmt = formatCurrency(preco)
+      previewEl.textContent = custoFmt + ' + ' + markup + '% = ' + precoFmt
+      previewEl.classList.remove('hidden')
+    }
+  } else {
+    if (previewEl) previewEl.classList.add('hidden')
+  }
+}
+
+function preencherMarkupInicial() {
+  const custo  = parseFloat(document.getElementById('pf-custo')?.value) || 0
+  const preco  = parseFloat(document.getElementById('pf-preco')?.value) || 0
+  const markupInput = document.getElementById('pf-markup')
+  if (custo > 0 && preco > custo && markupInput) {
+    const markup = ((preco / custo) - 1) * 100
+    if (isFinite(markup) && markup > 0) {
+      markupInput.value = Math.round(markup)
+      calcPrecoFromMarkup()
+    }
+  }
+}
+
 function activateCell(tamanho, cor) {
   const key = `${tamanho}|${cor}`
   const ref = document.getElementById('pf-ref')
@@ -1316,21 +1424,66 @@ function selectCategoryOption(e, value, create = false) {
   if (dropdown) dropdown.classList.add('hidden')
 }
 
-function saveProduct() {
+function saveProduct(produtoId) {
   const nome = document.getElementById('pf-nome')?.value.trim()
   if (!nome) {
     showToast('Informe o nome do produto.', 'error')
     return
   }
-  const cat = document.getElementById('pf-categoria')?.value.trim()
-  if (!cat) {
-    showToast('Selecione ou crie uma categoria.', 'error')
-    return
+
+  const categoria = document.getElementById('pf-categoria')?.value  || ''
+  const tecido    = document.getElementById('pf-tecido')?.value.trim() || ''
+  const estacao   = document.getElementById('pf-estacao')?.value   || ''
+  const ref       = document.getElementById('pf-ref')?.value.trim() || ''
+  const descricao = document.getElementById('pf-desc')?.value.trim() || ''
+  const precoBase = parseFloat(document.getElementById('pf-preco')?.value) || 0
+  const custoBase = parseFloat(document.getElementById('pf-custo')?.value) || 0
+
+  const variacoes = Object.entries(appState.gradeForm.celulas).map(([key, cell]) => {
+    const [tamanho, cor] = key.split('|')
+    const estoque    = typeof cell.estoque    === 'number' ? cell.estoque    : 0
+    const estoqueMin = typeof cell.estoqueMin === 'number' ? cell.estoqueMin : 2
+    const status = estoque === 0         ? 'critico'
+                 : estoque <= estoqueMin ? 'critico'
+                 : estoque <= estoqueMin * 1.5 ? 'baixo'
+                 : 'normal'
+    return {
+      id:         cell.id || ('v' + Date.now() + Math.random().toString(36).slice(2, 5)),
+      tamanho, cor,
+      sku:        cell.sku     || generateSKU(ref || 'PROD', tamanho, cor),
+      barcode:    cell.barcode || generateBarcode(),
+      preco:      cell.preco   || precoBase,
+      custo:      cell.custo   || custoBase,
+      estoque, estoqueMin, status
+    }
+  })
+
+  if (produtoId) {
+    const idx = PRODUTOS.findIndex(p => p.id === produtoId)
+    if (idx !== -1) {
+      PRODUTOS[idx] = {
+        ...PRODUTOS[idx],
+        nome, categoria, tecido, estacao, ref, descricao,
+        variacoes: variacoes.length ? variacoes : PRODUTOS[idx].variacoes
+      }
+      syncCatalogMeta()
+      showToast(`"${nome}" atualizado com sucesso.`, 'success')
+    } else {
+      showToast('Produto não encontrado para edição.', 'error')
+      return
+    }
+  } else {
+    if (!variacoes.length) {
+      showToast('Adicione ao menos uma variação na grade antes de salvar.', 'warning')
+      return
+    }
+    const newId = 'p' + Date.now().toString(36)
+    PRODUTOS.push({ id: newId, nome, categoria, tecido, estacao, ref, descricao, variacoes })
+    syncCatalogMeta()
+    showToast(`"${nome}" cadastrado com sucesso.`, 'success')
   }
-  registerCategory(cat)
-  const mode = productFormState.mode
-  const label = mode === 'duplicate' ? 'duplicado' : mode === 'edit' ? 'atualizado' : 'salvo'
-  showToast(`Produto "${nome}" ${label} com sucesso.`, 'success')
+
+  appState.gradeForm = { tamanhos: [], cores: [], celulas: {} }
   setTimeout(() => navigateTo('screen-catalog'), 800)
 }
 

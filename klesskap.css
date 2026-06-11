@@ -834,6 +834,18 @@ select.input {
   border-top-color: var(--ink);
 }
 
+/* Product form — split 55 / 45 */
+.product-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+@media (min-width: 1024px) {
+  .product-form-grid {
+    grid-template-columns: 55% 45%;
+  }
+}
+
 /* ===== GRADE DE PRODUTO (FORM) ===== */
 .grade-table {
   border-collapse: collapse;

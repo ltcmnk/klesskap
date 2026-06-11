@@ -2,12 +2,14 @@
 
 > **Sistema de PDV e gestão de estoque para varejo de moda** — do norueguês *klesskap* (guarda-roupa): organização elegante de cada peça.
 
-**Demo ao vivo:** https://klesskap-eight.vercel.app
-
 ![Versão](https://img.shields.io/badge/versão-3.1-7C6E5C?style=flat-square)
-![Status](https://img.shields.io/badge/status-protótipo-B8B2AA?style=flat-square)
+![Status](https://img.shields.io/badge/status-Sprint%204-B8B2AA?style=flat-square)
 ![Stack](https://img.shields.io/badge/stack-HTML%20%2F%20CSS%20%2F%20JS-1C1814?style=flat-square)
 ![Equipe](https://img.shields.io/badge/equipe-Valkiria%20Inc.-5A534A?style=flat-square)
+[![Spec](https://img.shields.io/badge/spec-PDF%20v3.0-7C6E5C?style=flat-square)](klesskap.pdf)
+
+**Demo ao vivo:** https://klesskap-eight.vercel.app
+**Repositório:** https://github.com/ltcmnk/klesskap
 
 ---
 
@@ -18,6 +20,53 @@ Klesskap é um sistema web de ponto de venda (PDV) e controle de estoque desenvo
 O problema que o Klesskap resolve é concreto: lojas de moda lidam com um catálogo complexo por natureza, onde cada produto existe em múltiplas combinações de tamanho e cor. Controlar esse nível de granularidade manualmente é propenso a erros — venda de item sem estoque, divergência entre o que entrou e o que foi vendido, comissões calculadas de cabeça. O sistema trata cada variação (ex: Blazer Alfaiataria, Off White / M) como uma unidade independente, com SKU, código de barras, estoque mínimo e preço próprios.
 
 O projeto foi construído como protótipo funcional para validação de fluxos operacionais. Todos os dados são simulados em memória — não há servidor nem banco de dados. O foco está na experiência de uso das três personas principais: a proprietária (que gerencia tudo), o responsável pelo estoque (recebimento e cadastro) e o operador de caixa (PDV e pagamento).
+
+---
+
+## Documentação técnica
+
+A especificação completa está em [`klesskap.pdf`](klesskap.pdf)
+— Valkiria Inc., v3.0, Sprint 4, 11/06/2026.
+
+### Requisitos funcionais (RQ01–RQ11)
+
+| ID | Requisito | Perfil |
+|---|---|---|
+| RQ01 | Cadastro de produtos com categoria, numeração, estação, tecido e referência de fábrica | Gerente de Estoque |
+| RQ02 | Entrada de mercadorias com referências de fábrica e geração de código de barras | Gerente de Estoque |
+| RQ03 | Gerenciamento de promoções com leitor de código de barras | Proprietário |
+| RQ04 | Relatórios financeiros: fechamento de caixa, vendas por vendedor, fiscal | Proprietário |
+| RQ05 | Notificações automáticas ao atingir estoque mínimo | Proprietário |
+| RQ06 | Divisão de comissão de uma venda entre dois vendedores | Proprietário |
+| RQ07 | Dashboard em tempo real: total de vendas do dia e alertas de estoque | Proprietário |
+| RQ08 | Autenticação por e-mail e senha com bloqueio sem credenciais válidas | Proprietário |
+| RQ09 | Visualização por nível de acesso: Proprietário/Admin, Gerente de Estoque, Operador/Vendedor | Proprietário |
+| RQ10 | Pagamentos: Dinheiro, Cartão de Crédito, Cartão de Débito e Pix | Proprietário / Vendedor |
+| RQ11 | Parcelamento no cartão de crédito com configuração do número máximo de parcelas | Proprietário |
+
+### Requisitos não funcionais (RQN01–RQN08)
+
+| ID | Requisito | Categoria FURPS+ |
+|---|---|---|
+| RQN01 | Responsivo para desktop e dispositivos móveis | Usability |
+| RQN02 | Interface intuitiva com esquemas de cores para diferentes módulos | Usability |
+| RQN03 | Leve e otimizado, com carregamento rápido das telas | Performance |
+| RQN04 | Arquitetura baseada em nuvem para acesso remoto | Constraints/Architecture |
+| RQN05 | Restrição de acesso a dados sensíveis (custo, lucro, relatórios) por perfil | Functionality/Security |
+| RQN06 | Feedback visual em tempo real para vendas, descontos, estoque e status | Usability |
+| RQN07 | Interface consistente, responsiva e alinhada ao varejo de moda | Usability |
+| RQN08 | Arquitetura modular para expansão futura | Supportability |
+
+### Modelagem UML
+
+O documento inclui os seguintes diagramas:
+
+- **Caso de Uso** — atores: Vendedor, Gerente de Estoque, Proprietário e Banco; 9 casos principais
+- **Classes** — entidades: Usuário, Venda, ItemVenda, Produto, Categoria, ReferênciaFabrica, Pagamento, Financeiro, Relatório, Movimentação
+- **Objetos** — fluxo completo de venda compartilhada com dois vendedores
+- **Sequência** — 5 diagramas: Login, Frente de Caixa (PDV), Fluxo Financeiro (Pagamento), Entrada de Mercadoria, Relatórios Financeiros
+- **Atividade** — 3 diagramas: Processo de Venda e Pagamento, Entrada de Mercadorias no Estoque, Geração do Dashboard em Tempo Real
+- **Estados** — ciclo de vida da entidade Venda: *Em andamento → Aguardando pagamento → Concluída / Cancelada*
 
 ---
 
@@ -190,150 +239,19 @@ Acesse `http://localhost:8080` no navegador.
 
 ---
 
-## Telas do Sistema
-
-O Klesskap é composto por **10 telas** organizadas em fluxos de trabalho
-distintos para cada perfil de acesso.
-
----
-
-### 1. Login
-**Arquivo:** `screenshots/tela-login.png`
-**Acesso:** Público (pré-autenticação)
-
-Tela inicial do sistema. Permite autenticação via e-mail e senha com
-validação de credenciais. Disponibiliza atalhos de acesso rápido para os
-três perfis de demonstração: Admin, Terminal de Estoque e Terminal de Vendas.
-
----
-
-### 2. Dashboard
-**Arquivo:** `screenshots/tela-dashboard.png`
-**Acesso:** Todos os perfis
-
-Painel principal exibido logo após o login. Apresenta as métricas do dia
-em tempo real: total de vendas, número de transações, ticket médio e alertas
-de estoque crítico. Inclui gráfico de barras com evolução de vendas nos
-últimos 7 dias, painel de alertas de variações com estoque abaixo do mínimo
-e tabela das últimas vendas realizadas.
-
----
-
-### 3. Catálogo de Produtos
-**Arquivo:** `screenshots/tela-catalogo.png`
-**Acesso:** Admin, Terminal de Estoque
-
-Lista completa de produtos cadastrados com filtros por categoria, tamanho,
-cor, estação e status de estoque. Cada produto pode ser expandido para
-exibir todas as suas variações (tamanho + cor) com SKU, código de barras,
-preço, custo, estoque atual e status. Permite acesso rápido ao formulário
-de edição e à entrada de mercadoria.
-
----
-
-### 4. Novo Produto / Editar Produto
-**Arquivo:** `screenshots/tela-formulario-produto.png`
-**Acesso:** Admin, Terminal de Estoque
-
-Formulário completo de cadastro e edição de produtos. Campos base incluem
-nome, categoria, tecido, estação, referência de fábrica e descrição.
-Campos financeiros (preço de venda e custo) visíveis apenas para Admin e
-Estoque. A grade de variações é uma tabela interativa de tamanho × cor onde
-cada célula ativa gera automaticamente SKU e código de barras próprios.
-Tamanhos e cores são gerenciados com chips removíveis e inputs inline.
-
----
-
-### 5. Entrada de Mercadoria
-**Arquivo:** `screenshots/tela-entrada-estoque.png`
-**Acesso:** Admin, Terminal de Estoque
-
-Tela para registro de recebimento físico de mercadorias. O responsável
-pelo recebimento é selecionado da equipe de estoque cadastrada. A busca
-de produto suporta pesquisa por nome ou referência de fábrica. Ao
-selecionar um produto, exibe todas as variações com input de quantidade
-recebida. Permite também cadastrar novas variações diretamente nesta tela.
-Inclui histórico de movimentações (entradas e saídas por venda).
-
----
-
-### 6. PDV — Frente de Caixa
-**Arquivo:** `screenshots/tela-pdv.png`
-**Acesso:** Admin, Terminal de Vendas
-
-Terminal de ponto de venda com layout em dois painéis. O painel esquerdo
-oferece busca de produtos por nome, SKU ou código de barras, com seletor
-de variação (tamanho e cor) e indicação de disponibilidade em estoque.
-O painel direito exibe o carrinho de compras com quantidades ajustáveis,
-subtotal e total. Inclui seleção de vendedor principal, opção de divisão
-de comissão entre dois vendedores e vinculação de cliente.
-
----
-
-### 7. Pagamento
-**Arquivo:** `screenshots/tela-pagamento.png`
-**Acesso:** Admin, Terminal de Vendas (a partir do PDV)
-
-Tela de finalização de venda. Exibe o resumo dos itens do carrinho,
-vendedores envolvidos e total a pagar. Suporta quatro métodos de
-pagamento: Dinheiro (com cálculo de troco), Pix, Cartão de Crédito
-(com parcelamento configurável em 1×, 2×, 3×, 4×, 5×, 6×, 10× ou 12×)
-e Cartão de Débito. Ao finalizar, registra a venda, atualiza o estoque
-e retorna ao PDV para nova venda.
-
----
-
-### 8. Relatórios
-**Arquivo:** `screenshots/tela-relatorios.png`
-**Acesso:** Admin, Terminal de Vendas (visão restrita para Estoque)
-
-Central de relatórios com filtro por período (Hoje, Esta Semana, Este Mês)
-e intervalo de datas personalizado. Organizado em quatro abas:
-**Financeiro** — detalhamento de todas as vendas do período com método e
-status; **Vendas por Vendedor** — desempenho individual com total vendido,
-comissão gerada e progresso de meta; **Fechamento de Caixa** — resumo por
-método de pagamento com totais e percentuais; **Fiscal** — relação de itens
-vendidos para controle tributário. Exportação de relatório em PDF disponível.
-
----
-
-### 9. Promoções
-**Arquivo:** `screenshots/tela-promocoes.png`
-**Acesso:** Admin
-
-Gerenciamento de campanhas promocionais ativas e encerradas. Lista as
-promoções com nome, escopo de aplicação, desconto, período de vigência e
-status. Permite criar novas promoções via formulário em modal com campos
-de nome, escopo, desconto (percentual ou valor fixo) e datas de início e
-fim. Promoções ativas ficam marcadas com badge verde; encerradas, com badge
-cinza.
-
----
-
-### 10. Usuários
-**Arquivo:** `screenshots/tela-usuarios.png`
-**Acesso:** Admin (exclusivo)
-
-Painel de gestão de usuários do sistema. Exibe todos os usuários cadastrados
-com nome, e-mail, perfil de acesso (Admin/Proprietário, Gerente de Estoque
-ou Operador/Vendedor) e status ativo/inativo via toggle. Permite ativar e
-desativar usuários individualmente. O proprietário logado não pode
-desativar sua própria conta. Criação de novo usuário disponível (em
-desenvolvimento na versão atual).
-
----
-
-> **Nota:** Os perfis de acesso determinam quais telas são visíveis no menu
-> lateral. Telas restritas exibem uma mensagem de acesso negado ao invés
-> do conteúdo, sem redirecionar o usuário.
-
----
-
 ## Equipe
 
-Desenvolvido por **Valkiria Inc.**
+Desenvolvido por **Valkiria Inc.** — Curitiba, 2026.
 
-Projeto acadêmico — protótipo funcional desenvolvido como estudo de sistema de PDV para varejo de moda. Curitiba, 2026.
+| Integrante | Responsabilidade |
+|---|---|
+| Karen Cristini Nogueira | Levantamento de requisitos, identificação de necessidades do usuário e definição das funcionalidades principais |
+| Letícia Miniuk Rosa Pereira | Documentação do projeto, desenvolvimento do protótipo, design da interface e adequação da experiência ao contexto de varejo de moda |
+| Rayssa Gaievicz Grafetti | Elaboração dos diagramas UML: casos de uso, classes, objetos, sequência, atividade e estados |
+| Victor Willian Rodrigues Bittencourt | Validação dos fluxos funcionais, revisão de consistência entre requisitos, diagramas e protótipo, e testes de navegação |
+
+Projeto acadêmico — protótipo funcional de sistema de PDV para varejo de moda.
+Universidade, Curitiba, 2026.
 
 ---
 
@@ -342,7 +260,9 @@ Projeto acadêmico — protótipo funcional desenvolvido como estudo de sistema 
 | Versão | Data | Mudanças principais |
 |---|---|---|
 | **v3.1** | Jun/2026 | Correção de busca (PDV e Entrada passam a cobrir ref + SKU + barcode); adição de nova variação inline em Entrada de Mercadoria; `.variacao-chip` estilizado; paleta migrada para greige frio (DM Serif Display + DM Sans) |
-| **v3.0** | Mai/2026 | Sprint 4 — categoria dinâmica, grade inline, duplicar produto, sistema de design editorial |
+| **v3.0** | Jun/2026 | Sprint 4 — especificação completa, diagramas e protótipo inicial |
+| **v2.0** | Mai/2026 | Sprint 3 — expansão dos requisitos e modelagem UML |
+| **v1.0** | Abr/2026 | Sprint 1 — criação do documento e levantamento de requisitos |
 
 ---
 
