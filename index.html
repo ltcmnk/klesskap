@@ -5,37 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Klesskap</title>
   <link rel="stylesheet" href="klesskap.css">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
           fontFamily: {
-            display: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+            display: ['"DM Serif Display"', 'Georgia', 'serif'],
             ui:      ['"DM Sans"', 'system-ui', 'sans-serif'],
             mono:    ['"JetBrains Mono"', 'monospace'],
           },
           colors: {
-            canvas:    '#F9F6F1',
-            base:      '#F4F0EA',
-            elevated:  '#FDFCF9',
-            subtle:    '#EDE9E2',
-            inset:     '#E6E1D8',
-            ink:       '#1C1814',
-            'ink-2':   '#5A534A',
-            'ink-3':   '#8C857C',
-            'ink-4':   '#B8B2AA',
-            accent:    '#8B6F3E',
-            'accent-h':'#7A6035',
-            'accent-s':'#F5EFE5',
-            border:    '#D8D2C8',
-            'border-h':'#B8B0A4',
-            success:   '#3D6B45',
-            'success-s':'#EAF2EB',
-            danger:    '#8B3A2E',
-            'danger-s':'#F5E8E6',
-            warning:   '#7A5F2A',
-            'warning-s':'#F5EDE0',
+            canvas:       '#F2F1EE',
+            base:         '#F2F1EE',
+            elevated:     '#FAFAF8',
+            subtle:       '#EEECEA',
+            inset:        '#EEECEA',
+            ink:          '#1E1E1C',
+            'ink-2':      '#4A4845',
+            'ink-3':      '#8A8784',
+            'ink-4':      '#B8B4B0',
+            accent:       '#7C6E5C',
+            'accent-h':   '#6A5E4E',
+            'accent-s':   '#EFEDE8',
+            'accent-btn': '#5C5046',
+            border:       '#E2E0DC',
+            'border-h':   '#D8D5D0',
+            success:      '#3D6B4F',
+            'success-s':  '#F1F7F4',
+            danger:       '#C0392B',
+            'danger-s':   '#FDF2F1',
+            warning:      '#7A6C3E',
+            'warning-s':  '#FDFAF1',
           },
           borderRadius: {
             sm: '3px', DEFAULT: '6px', md: '6px', lg: '10px', xl: '14px',
@@ -144,7 +146,7 @@
         <div class="header-zone-b">
           <div class="header-search-wrap">
             <svg class="header-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-            <input type="search" class="header-search" placeholder="Buscar produto, cliente, SKU...">
+            <input type="search" class="header-search" placeholder="Buscar produto, SKU...">
           </div>
         </div>
 

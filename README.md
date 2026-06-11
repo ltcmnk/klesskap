@@ -4,7 +4,7 @@
 
 **Demo ao vivo:** https://klesskap-eight.vercel.app
 
-![Versão](https://img.shields.io/badge/versão-3.0-8B6F3E?style=flat-square)
+![Versão](https://img.shields.io/badge/versão-3.1-7C6E5C?style=flat-square)
 ![Status](https://img.shields.io/badge/status-protótipo-B8B2AA?style=flat-square)
 ![Stack](https://img.shields.io/badge/stack-HTML%20%2F%20CSS%20%2F%20JS-1C1814?style=flat-square)
 ![Equipe](https://img.shields.io/badge/equipe-Valkiria%20Inc.-5A534A?style=flat-square)
@@ -37,25 +37,28 @@ O projeto foi construído como protótipo funcional para validação de fluxos o
 
 ### Cadastro de Produto
 - Formulário com campos de nome, categoria, tecido, estação, referência e descrição
+- **Categoria dinâmica:** combo-box com busca; ao digitar um nome que não existe, a opção "+ Criar categoria" é exibida e a nova categoria fica disponível em todo o sistema
 - Grade interativa de variações: eixo tamanho × eixo cor, com ativação de célula por clique
+- **Tamanho e cor inline:** botões "+ Tamanho" e "+ Cor" abrem um input inline na própria grade — sem modal — para adicionar novas opções que ficam disponíveis globalmente
 - Geração automática de SKU a partir da referência, tamanho e cor
 - Geração de código de barras (EAN-13 simulado) para cada variação
 - Campos de preço de venda e custo unitário (visíveis apenas para perfis Admin e Estoque)
+- **Duplicar produto:** botão na linha do catálogo abre o formulário pré-preenchido com todos os dados do original (nome com sufixo "cópia", referência limpa, estoque zerado)
 
 ### Entrada de Mercadoria
-- Busca de produto por nome ou referência para seleção do item recebido
+- Busca de produto por nome, referência de fábrica, SKU ou código de barras (parcial, case-insensitive)
 - Entrada de quantidade por variação individual (cada combinação tamanho/cor separada)
+- **Adição de nova variação diretamente na tela de entrada:** ao receber um lote com cor ou tamanho inédito, é possível cadastrar a nova variação inline (campos de tamanho, cor e quantidade), sem sair da tela — a variação é criada no produto e o estoque é lançado imediatamente
 - Seleção do responsável pelo recebimento (equipe de estoque cadastrada)
 - Atualização do estoque e recálculo automático do status (normal / baixo / crítico)
 - Histórico de movimentações com tipo (entrada/saída), variação, quantidade e data
 
 ### PDV — Frente de Caixa
-- Busca de produto por nome, SKU ou código de barras
+- Busca de produto por nome, referência de fábrica, SKU ou código de barras (parcial, case-insensitive; buscar pelo barcode de uma variação específica retorna o produto pai)
 - Seleção de variação com picker visual (tamanho → cor), bloqueando automaticamente variações sem estoque
 - Carrinho com controle de quantidade (respeita limite de estoque disponível) e remoção de itens
 - Seleção de vendedor principal com opção de divisão de comissão entre dois vendedores
 - Cálculo automático de comissão individual (3%) com exibição do rateio em tempo real
-- Seleção de cliente para vinculação da venda
 
 ### Pagamentos
 - Métodos disponíveis: Dinheiro, Pix, Cartão de Crédito e Cartão de Débito
@@ -65,10 +68,10 @@ O projeto foi construído como protótipo funcional para validação de fluxos o
 - Recibo com detalhamento de itens, método, vendedor(es), comissão e ID da venda
 
 ### Relatórios
-- **Financeiro:** listagem completa de vendas com ID, horário, cliente, método e total
+- **Financeiro:** listagem completa de vendas com ID, horário, método e total
 - **Vendas por Vendedor:** volume e comissão por vendedor com divisão de vendas compartilhadas
 - **Fechamento de Caixa:** total por método de pagamento (dinheiro, Pix, crédito, débito)
-- **Fiscal:** nota/cupom com número, data, cliente e status de emissão
+- **Fiscal:** nota/cupom com número, data, valor e status de emissão
 - Seletor de período (Hoje / Esta Semana / Este Mês) e intervalo por data
 
 ### Promoções
@@ -116,7 +119,7 @@ O projeto é intencionalmente sem dependências de pacote ou etapa de build. Tud
 | Estilos base | CSS custom (`klesskap.css`) | Design tokens em variáveis CSS, componentes e animações |
 | Utilitários | Tailwind CSS via CDN | Configuração inline no `<head>` com paleta e tipografia customizadas |
 | Lógica | JavaScript vanilla ES6+ | `klesskap.js`, sem framework, sem módulos externos |
-| Tipografia | Google Fonts | Cormorant Garamond (display), DM Sans (UI), JetBrains Mono (dados) |
+| Tipografia | Google Fonts | DM Serif Display (display/títulos), DM Sans (UI/operacional), JetBrains Mono (dados/mono) |
 | Ícones | SVG inline | Gerados via função `svgIcon()` em JavaScript, sem biblioteca externa |
 
 **Sobre o `klesskap.css`:** o arquivo define um sistema de tokens completo em `:root` — paleta, sombras, easing curves, fontes — e implementa todos os componentes da interface (cards, tabelas, botões, inputs, badges, modal, toast, toggle, tabs, PDV, pagamento). O Tailwind serve apenas para utilitários de layout e espaçamento; os componentes com identidade visual são inteiramente definidos no CSS próprio.
@@ -187,89 +190,6 @@ Acesse `http://localhost:8080` no navegador.
 
 ---
 
-## Capturas de tela
-
-As telas abaixo foram capturadas no protótipo em execução.
-
-<div align="center">
-
-### Login e visão geral
-
-</div>
-
-<table>
-	<tr>
-		<td width="50%" valign="top">
-			<a href="screenshots/01-login.png"><img src="screenshots/01-login.png" alt="Tela de login" /></a>
-			<p align="center"><strong>Login</strong></p>
-		</td>
-		<td width="50%" valign="top">
-			<a href="screenshots/02-dashboard.png"><img src="screenshots/02-dashboard.png" alt="Dashboard" /></a>
-			<p align="center"><strong>Dashboard</strong></p>
-		</td>
-	</tr>
-	<tr>
-		<td width="50%" valign="top">
-			<a href="screenshots/03-catalogo.png"><img src="screenshots/03-catalogo.png" alt="Catálogo" /></a>
-			<p align="center"><strong>Catálogo</strong></p>
-		</td>
-		<td width="50%" valign="top">
-			<a href="screenshots/04-novo-produto.png"><img src="screenshots/04-novo-produto.png" alt="Novo produto" /></a>
-			<p align="center"><strong>Novo Produto</strong></p>
-		</td>
-	</tr>
-</table>
-
-<div align="center">
-
-### Operação de loja
-
-</div>
-
-<table>
-	<tr>
-		<td width="50%" valign="top">
-			<a href="screenshots/05-entrada-mercadoria.png"><img src="screenshots/05-entrada-mercadoria.png" alt="Entrada de mercadoria" /></a>
-			<p align="center"><strong>Entrada de Mercadoria</strong></p>
-		</td>
-		<td width="50%" valign="top">
-			<a href="screenshots/06-pdv.png"><img src="screenshots/06-pdv.png" alt="Frente de caixa" /></a>
-			<p align="center"><strong>Frente de Caixa (PDV)</strong></p>
-		</td>
-	</tr>
-	<tr>
-		<td width="50%" valign="top">
-			<a href="screenshots/07-pagamento.png"><img src="screenshots/07-pagamento.png" alt="Pagamento" /></a>
-			<p align="center"><strong>Pagamento</strong></p>
-		</td>
-		<td width="50%" valign="top">
-			<a href="screenshots/08-relatorios.png"><img src="screenshots/08-relatorios.png" alt="Relatórios" /></a>
-			<p align="center"><strong>Relatórios</strong></p>
-		</td>
-	</tr>
-</table>
-
-<div align="center">
-
-### Gestão
-
-</div>
-
-<table>
-	<tr>
-		<td width="50%" valign="top">
-			<a href="screenshots/09-promocoes.png"><img src="screenshots/09-promocoes.png" alt="Promoções" /></a>
-			<p align="center"><strong>Promoções</strong></p>
-		</td>
-		<td width="50%" valign="top">
-			<a href="screenshots/10-usuarios.png"><img src="screenshots/10-usuarios.png" alt="Usuários" /></a>
-			<p align="center"><strong>Usuários</strong></p>
-		</td>
-	</tr>
-</table>
-
----
-
 ## Equipe
 
 Desenvolvido por **Valkiria Inc.**
@@ -278,9 +198,18 @@ Projeto acadêmico — protótipo funcional desenvolvido como estudo de sistema 
 
 ---
 
+## Histórico de versões
+
+| Versão | Data | Mudanças principais |
+|---|---|---|
+| **v3.1** | Jun/2026 | Correção de busca (PDV e Entrada passam a cobrir ref + SKU + barcode); adição de nova variação inline em Entrada de Mercadoria; `.variacao-chip` estilizado; paleta migrada para greige frio (DM Serif Display + DM Sans) |
+| **v3.0** | Mai/2026 | Sprint 4 — categoria dinâmica, grade inline, duplicar produto, sistema de design editorial |
+
+---
+
 ## Versão e Licença
 
-**Klesskap v3.0 — Sprint 4 (Mai/2026)**
+**Klesskap v3.1 — Jun/2026**
 
 Confidencial — Valkiria Inc. © 2026. Todos os direitos reservados.
 

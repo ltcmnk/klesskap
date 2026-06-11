@@ -74,18 +74,128 @@ const PRODUTOS = [
     ]
   },
 ]
+const CATALOG_META = {
+  categories: [...new Set(PRODUTOS.map(p => p.categoria))],
+  sizes: [...new Set(PRODUTOS.flatMap(p => p.variacoes.map(v => v.tamanho)))],
+  colors: [...new Set(PRODUTOS.flatMap(p => p.variacoes.map(v => v.cor)))],
+}
+
+const DEFAULT_GRADE_FORM = () => ({ tamanhos: ['P', 'M', 'G'], cores: ['Preto'], celulas: {}, inlineField: null, inlineValue: '' })
+
+let productFormState = {
+  mode: 'new',
+  sourceId: null,
+  categoryQuery: '',
+  showCategoryMenu: false,
+}
+
+function syncCatalogMeta() {
+  PRODUTOS.forEach(produto => {
+    if (!CATALOG_META.categories.includes(produto.categoria)) CATALOG_META.categories.push(produto.categoria)
+    produto.variacoes.forEach(variacao => {
+      if (!CATALOG_META.sizes.includes(variacao.tamanho)) CATALOG_META.sizes.push(variacao.tamanho)
+      if (!CATALOG_META.colors.includes(variacao.cor)) CATALOG_META.colors.push(variacao.cor)
+    })
+  })
+}
+
+function registerCategory(nome) {
+  const value = String(nome || '').trim()
+  if (!value) return value
+  if (!CATALOG_META.categories.includes(value)) CATALOG_META.categories.push(value)
+  return value
+}
+
+function registerSize(nome) {
+  const value = String(nome || '').trim()
+  if (!value) return value
+  if (!CATALOG_META.sizes.includes(value)) CATALOG_META.sizes.push(value)
+  return value
+}
+
+function registerColor(nome) {
+  const value = String(nome || '').trim()
+  if (!value) return value
+  if (!CATALOG_META.colors.includes(value)) CATALOG_META.colors.push(value)
+  return value
+}
+
+function resetProductFormState() {
+  productFormState = {
+    mode: 'new',
+    sourceId: null,
+    categoryQuery: '',
+    showCategoryMenu: false,
+  }
+  appState.gradeForm = DEFAULT_GRADE_FORM()
+}
+
+function startNewProductForm() {
+  resetProductFormState()
+  renderProductForm()
+}
+
+function openProductForm(produtoId) {
+  productFormState = {
+    mode: 'edit',
+    sourceId: produtoId,
+    categoryQuery: '',
+    showCategoryMenu: false,
+  }
+  const produto = PRODUTOS.find(p => p.id === produtoId)
+  if (produto) {
+    const tamanhos = [...new Set(produto.variacoes.map(v => v.tamanho))]
+    const cores    = [...new Set(produto.variacoes.map(v => v.cor))]
+    const celulas  = {}
+    produto.variacoes.forEach(v => {
+      celulas[`${v.tamanho}|${v.cor}`] = { sku: v.sku, barcode: v.barcode, estoque: v.estoque, estoqueMin: v.estoqueMin, preco: v.preco }
+    })
+    appState.gradeForm = DEFAULT_GRADE_FORM()
+    Object.assign(appState.gradeForm, { tamanhos, cores, celulas })
+  }
+  renderProductForm()
+  closeSidebar()
+  showScreen('screen-product-form')
+  updateNavActive('screen-product-form')
+}
+
+function duplicateProduct(produtoId) {
+  productFormState = {
+    mode: 'duplicate',
+    sourceId: produtoId,
+    categoryQuery: '',
+    showCategoryMenu: false,
+  }
+  const produto = PRODUTOS.find(p => p.id === produtoId)
+  if (produto) {
+    const tamanhos = [...new Set(produto.variacoes.map(v => v.tamanho))]
+    const cores    = [...new Set(produto.variacoes.map(v => v.cor))]
+    const celulas  = {}
+    produto.variacoes.forEach(v => {
+      celulas[`${v.tamanho}|${v.cor}`] = { sku: v.sku, barcode: v.barcode, estoque: 0, estoqueMin: v.estoqueMin, preco: v.preco }
+    })
+    appState.gradeForm = DEFAULT_GRADE_FORM()
+    Object.assign(appState.gradeForm, { tamanhos, cores, celulas })
+  }
+  renderProductForm()
+  closeSidebar()
+  showScreen('screen-product-form')
+  updateNavActive('screen-product-form')
+}
+
+syncCatalogMeta()
 
 const VENDAS = [
   {
     id: 'VND-2026-0342', horario: '09:42',
     vendedorPrincipal: 'Letícia Oliveira', segundoVendedor: 'Victor Souza', comissaoDividida: true,
-    cliente: 'Fernanda Costa', total: 699.80, metodo: 'Crédito', parcelas: 3, status: 'Concluída',
+    total: 699.80, metodo: 'Crédito', parcelas: 3, status: 'Concluída',
     itens: [{ nome:'Blazer Alfaiataria', variacao:'Off White / M', sku:'BLZ-M-OFW', qtd:2, preco:349.90 }]
   },
   {
     id: 'VND-2026-0341', horario: '09:15',
     vendedorPrincipal: 'Amanda Costa', segundoVendedor: null, comissaoDividida: false,
-    cliente: 'Julia Alves', total: 439.80, metodo: 'Pix', parcelas: 1, status: 'Concluída',
+    total: 439.80, metodo: 'Pix', parcelas: 1, status: 'Concluída',
     itens: [
       { nome:'Vestido Midi',  variacao:'Preto / 36', sku:'VMD-36-PRT', qtd:1, preco:279.90 },
       { nome:'Camisa Linho',  variacao:'Bege / P',   sku:'CML-P-BEG', qtd:1, preco:159.90 },
@@ -94,13 +204,13 @@ const VENDAS = [
   {
     id: 'VND-2026-0340', horario: '08:55',
     vendedorPrincipal: 'Victor Souza', segundoVendedor: null, comissaoDividida: false,
-    cliente: null, total: 189.90, metodo: 'Débito', parcelas: 1, status: 'Concluída',
+    total: 189.90, metodo: 'Débito', parcelas: 1, status: 'Concluída',
     itens: [{ nome:'Calça Wide Leg', variacao:'Preta / 34', sku:'CWL-34-PRT', qtd:1, preco:189.90 }]
   },
   {
     id: 'VND-2026-0339', horario: '08:20',
     vendedorPrincipal: 'Letícia Oliveira', segundoVendedor: null, comissaoDividida: false,
-    cliente: 'Mariana Souza', total: 219.90, metodo: 'Pix', parcelas: 1, status: 'Concluída',
+    total: 219.90, metodo: 'Pix', parcelas: 1, status: 'Concluída',
     itens: [{ nome:'Saia Plissada', variacao:'Cinza / P', sku:'SPA-P-CZA', qtd:1, preco:219.90 }]
   },
 ]
@@ -117,7 +227,7 @@ const VENDAS_SEMANA = [
 
 const PROMOCOES = [
   { id:1, nome:'Promoção Inverno 2026', escopo:'Coleção Inverno', desconto:'10%',   inicio:'2026-05-01', fim:'2026-06-30', status:'ativa'     },
-  { id:2, nome:'Desconto VIP Maio',     escopo:'Clientes VIP',    desconto:'R$ 50', inicio:'2026-05-01', fim:'2026-05-31', status:'encerrada' },
+  { id:2, nome:'Desconto Maio',         escopo:'Coleção Selecionada', desconto:'R$ 50', inicio:'2026-05-01', fim:'2026-05-31', status:'encerrada' },
 ]
 
 const USUARIOS = [
@@ -148,6 +258,9 @@ let appState = {
   reportPeriodo: 'hoje',
   entradaSelectedProduto: null,
   entradaQuantidades: {},
+  entradaNovaVarMode: false,
+  entradaNovaVarTamanho: '',
+  entradaNovaVarCor: '',
   gradeForm: { tamanhos: [], cores: [], celulas: {} },
   paymentMetodo: null,
   paymentParcelas: 1,
@@ -198,6 +311,7 @@ function svgIcon(name, size = 16) {
     home: `<polyline points="3 9 12 2 21 9"/><polyline points="9 22 9 12 15 12 15 22"/><path d="M3 9v13h18V9"/>`,
     grid: `<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>`,
     plus: `<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>`,
+    copy: `<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>`,
     box: `<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>`,
     'shopping-cart': `<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>`,
     'credit-card': `<rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>`,
@@ -285,7 +399,7 @@ function navigateTo(screenId) {
   switch (screenId) {
     case 'screen-dashboard':   renderDashboard();             break
     case 'screen-catalog':     renderCatalog();               break
-    case 'screen-product-form':renderProductForm(null);       break
+    case 'screen-product-form':startNewProductForm();         break
     case 'screen-stock-entry': renderStockEntry();            break
     case 'screen-pdv':         renderPDV();                   break
     case 'screen-payment':     renderPayment();               break
@@ -373,9 +487,11 @@ function handleLogout() {
     catalogFiltros: { categorias:[], tamanhos:[], cores:[], estacoes:[], status:[], search:'' },
     reportTab: 'financeiro', reportPeriodo: 'hoje',
     entradaSelectedProduto: null, entradaQuantidades: {},
+    entradaNovaVarMode: false, entradaNovaVarTamanho: '', entradaNovaVarCor: '',
     gradeForm: { tamanhos:[], cores:[], celulas:{} },
     paymentMetodo: null, paymentParcelas: 1,
   }
+  resetProductFormState()
   document.getElementById('app-shell').classList.add('hidden')
   document.getElementById('screen-login').classList.remove('hidden')
   document.getElementById('login-email').value = ''
@@ -514,9 +630,9 @@ function renderChartSVG(data) {
     const barH = Math.round((d.valor / maxVal) * chartH * 0.85)
     const y = PADDING.top + chartH - barH
     return `
-      <rect x="${x}" y="${y}" width="${barW}" height="${barH}" rx="3" fill="#8B6F3E" fill-opacity="0.65"
+      <rect x="${x}" y="${y}" width="${barW}" height="${barH}" rx="3" fill="#7C6E5C" fill-opacity="0.65"
         style="transition:fill-opacity 120ms ease" onmouseover="this.style.fillOpacity=1" onmouseout="this.style.fillOpacity=0.65"/>
-      <text x="${x + barW/2}" y="${y - 4}" text-anchor="middle" font-size="9" font-family="JetBrains Mono,monospace" fill="#8B6F3E" font-weight="500">
+      <text x="${x + barW/2}" y="${y - 4}" text-anchor="middle" font-size="9" font-family="JetBrains Mono,monospace" fill="#7C6E5C" font-weight="500">
         ${d.valor >= 1000 ? (d.valor/1000).toFixed(1)+'k' : d.valor}
       </text>
       <text x="${x + barW/2}" y="${H - 6}" text-anchor="middle" font-size="10" font-family="DM Sans,system-ui,sans-serif" fill="#8C857C">${d.dia}</text>
@@ -547,7 +663,7 @@ function renderSalesTable(vendas) {
       <table>
         <thead>
           <tr>
-            <th>ID</th><th>Horário</th><th>Cliente</th><th>Vendedor</th>
+            <th>ID</th><th>Horário</th><th>Vendedor</th>
             <th>Método</th><th>Total</th><th>Status</th>
           </tr>
         </thead>
@@ -556,7 +672,6 @@ function renderSalesTable(vendas) {
             <tr>
               <td><span class="t-data text-ink-3">${escHtml(v.id)}</span></td>
               <td><span class="t-data">${escHtml(v.horario)}</span></td>
-              <td>${v.cliente ? escHtml(v.cliente) : '<span class="text-ink-3">—</span>'}</td>
               <td>
                 <span>${escHtml(v.vendedorPrincipal)}</span>
                 ${v.comissaoDividida ? `<span class="badge badge-accent ml-1">Dividida</span>` : ''}
@@ -738,7 +853,8 @@ function renderCatalogRow(p) {
           <button onclick="toggleGradeVariacoes('${p.id}')" class="btn btn-ghost btn-sm" aria-expanded="${expanded}">
             Grade ${expanded ? svgIcon('chevron-down',12) : svgIcon('chevron-right',12)}
           </button>
-          <button onclick="openProductForm('${p.id}')" class="btn btn-ghost btn-sm">${svgIcon('edit',13)}</button>
+          <button onclick="openProductForm('${p.id}')" class="btn btn-ghost btn-sm" title="Editar">${svgIcon('edit',13)}</button>
+          <button onclick="duplicateProduct('${p.id}')" class="btn btn-ghost btn-sm" title="Duplicar">${svgIcon('copy',13)}</button>
           <button onclick="showToast('Etiquetas geradas para ${escHtml(p.nome.replace(/'/g, "\\'"))}','success')" class="btn btn-ghost btn-sm">${svgIcon('label',13)}</button>
         </div>
       </td>
@@ -768,32 +884,32 @@ function renderGradeVariacoesRow(p) {
           <p class="text-[11px] text-ink-3 italic px-4 py-2">O estoque real é controlado por tamanho e cor de cada variação.</p>
           <table style="width:100%;border-collapse:collapse">
             <thead>
-              <tr style="background:#EDE9E2">
-                <th style="padding:8px 16px 8px 40px;text-align:left;font-size:10px;font-weight:500;letter-spacing:0.10em;text-transform:uppercase;color:#8C857C;border-bottom:1px solid #D8D2C8">Tamanho</th>
-                <th style="padding:8px 16px;text-align:left;font-size:10px;font-weight:500;letter-spacing:0.10em;text-transform:uppercase;color:#8C857C;border-bottom:1px solid #D8D2C8">Cor</th>
-                <th style="padding:8px 16px;text-align:left;font-size:10px;font-weight:500;letter-spacing:0.10em;text-transform:uppercase;color:#8C857C;border-bottom:1px solid #D8D2C8">SKU</th>
-                <th style="padding:8px 16px;text-align:left;font-size:10px;font-weight:500;letter-spacing:0.10em;text-transform:uppercase;color:#8C857C;border-bottom:1px solid #D8D2C8">Barcode</th>
-                <th style="padding:8px 16px;text-align:left;font-size:10px;font-weight:500;letter-spacing:0.10em;text-transform:uppercase;color:#8C857C;border-bottom:1px solid #D8D2C8">Estoque</th>
-                <th style="padding:8px 16px;text-align:left;font-size:10px;font-weight:500;letter-spacing:0.10em;text-transform:uppercase;color:#8C857C;border-bottom:1px solid #D8D2C8">Mínimo</th>
-                <th style="padding:8px 16px;text-align:left;font-size:10px;font-weight:500;letter-spacing:0.10em;text-transform:uppercase;color:#8C857C;border-bottom:1px solid #D8D2C8">Preço</th>
-                <th style="padding:8px 16px;text-align:left;font-size:10px;font-weight:500;letter-spacing:0.10em;text-transform:uppercase;color:#8C857C;border-bottom:1px solid #D8D2C8">Status</th>
-                <th style="padding:8px 16px;text-align:left;font-size:10px;font-weight:500;letter-spacing:0.10em;text-transform:uppercase;color:#8C857C;border-bottom:1px solid #D8D2C8">Ações</th>
+              <tr style="background:#EEECEA">
+                <th style="padding:8px 16px 8px 40px;text-align:left;font-size:11px;font-weight:500;letter-spacing:0.10em;text-transform:uppercase;color:#8A8784;border-bottom:1px solid #E2E0DC">Tamanho</th>
+                <th style="padding:8px 16px;text-align:left;font-size:11px;font-weight:500;letter-spacing:0.10em;text-transform:uppercase;color:#8A8784;border-bottom:1px solid #E2E0DC">Cor</th>
+                <th style="padding:8px 16px;text-align:left;font-size:11px;font-weight:500;letter-spacing:0.10em;text-transform:uppercase;color:#8A8784;border-bottom:1px solid #E2E0DC">SKU</th>
+                <th style="padding:8px 16px;text-align:left;font-size:11px;font-weight:500;letter-spacing:0.10em;text-transform:uppercase;color:#8A8784;border-bottom:1px solid #E2E0DC">Barcode</th>
+                <th style="padding:8px 16px;text-align:left;font-size:11px;font-weight:500;letter-spacing:0.10em;text-transform:uppercase;color:#8A8784;border-bottom:1px solid #E2E0DC">Estoque</th>
+                <th style="padding:8px 16px;text-align:left;font-size:11px;font-weight:500;letter-spacing:0.10em;text-transform:uppercase;color:#8A8784;border-bottom:1px solid #E2E0DC">Mínimo</th>
+                <th style="padding:8px 16px;text-align:left;font-size:11px;font-weight:500;letter-spacing:0.10em;text-transform:uppercase;color:#8A8784;border-bottom:1px solid #E2E0DC">Preço</th>
+                <th style="padding:8px 16px;text-align:left;font-size:11px;font-weight:500;letter-spacing:0.10em;text-transform:uppercase;color:#8A8784;border-bottom:1px solid #E2E0DC">Status</th>
+                <th style="padding:8px 16px;text-align:left;font-size:11px;font-weight:500;letter-spacing:0.10em;text-transform:uppercase;color:#8A8784;border-bottom:1px solid #E2E0DC">Ações</th>
               </tr>
             </thead>
             <tbody>
               ${p.variacoes.map(v => {
-                const rowBg = v.estoque === 0 ? 'background:rgba(139,58,46,0.05)' : v.estoque <= v.estoqueMin ? 'background:rgba(122,95,42,0.05)' : ''
+                const rowBg = v.estoque === 0 ? 'background:rgba(192,57,43,0.05)' : v.estoque <= v.estoqueMin ? 'background:rgba(122,108,62,0.05)' : ''
                 return `
                   <tr style="${rowBg}">
-                    <td style="padding:10px 16px 10px 40px;border-bottom:1px solid #E6E1D8;font-size:12.5px">${escHtml(v.tamanho)}</td>
-                    <td style="padding:10px 16px;border-bottom:1px solid #E6E1D8;font-size:12.5px">${escHtml(v.cor)}</td>
-                    <td style="padding:10px 16px;border-bottom:1px solid #E6E1D8"><span class="t-data text-[12px]">${escHtml(v.sku)}</span></td>
-                    <td style="padding:10px 16px;border-bottom:1px solid #E6E1D8"><span class="t-data text-[12px]">${escHtml(v.barcode)}</span></td>
-                    <td style="padding:10px 16px;border-bottom:1px solid #E6E1D8"><span class="t-data font-medium">${v.estoque}</span></td>
-                    <td style="padding:10px 16px;border-bottom:1px solid #E6E1D8"><span class="t-data text-ink-3">${v.estoqueMin}</span></td>
-                    <td style="padding:10px 16px;border-bottom:1px solid #E6E1D8"><span class="t-data">${formatCurrency(v.preco)}</span></td>
-                    <td style="padding:10px 16px;border-bottom:1px solid #E6E1D8"><span class="badge ${badgeClass(v.status)}">${statusLabel(v.status)}</span></td>
-                    <td style="padding:10px 16px;border-bottom:1px solid #E6E1D8">
+                    <td style="padding:10px 16px 10px 40px;border-bottom:1px solid #E2E0DC;font-size:14px">${escHtml(v.tamanho)}</td>
+                    <td style="padding:10px 16px;border-bottom:1px solid #E2E0DC;font-size:14px">${escHtml(v.cor)}</td>
+                    <td style="padding:10px 16px;border-bottom:1px solid #E2E0DC"><span class="t-data text-[13px]">${escHtml(v.sku)}</span></td>
+                    <td style="padding:10px 16px;border-bottom:1px solid #E2E0DC"><span class="t-data text-[13px]">${escHtml(v.barcode)}</span></td>
+                    <td style="padding:10px 16px;border-bottom:1px solid #E2E0DC"><span class="t-data font-medium">${v.estoque}</span></td>
+                    <td style="padding:10px 16px;border-bottom:1px solid #E2E0DC"><span class="t-data text-ink-3">${v.estoqueMin}</span></td>
+                    <td style="padding:10px 16px;border-bottom:1px solid #E2E0DC"><span class="t-data">${formatCurrency(v.preco)}</span></td>
+                    <td style="padding:10px 16px;border-bottom:1px solid #E2E0DC"><span class="badge ${badgeClass(v.status)}">${statusLabel(v.status)}</span></td>
+                    <td style="padding:10px 16px;border-bottom:1px solid #E2E0DC">
                       <div class="flex gap-1">
                         <button class="btn btn-ghost btn-sm" onclick="showToast('Editando variação ${escHtml(v.sku)}','info')">${svgIcon('edit',12)} Editar</button>
                         <button class="btn btn-ghost btn-sm" onclick="showToast('Etiqueta gerada: ${escHtml(v.sku)}','success')">${svgIcon('label',12)} Etiqueta</button>
@@ -812,39 +928,33 @@ function renderGradeVariacoesRow(p) {
 
 // ===== FORMULÁRIO DE PRODUTO =====
 
-function openProductForm(produtoId) {
-  navigateTo('screen-product-form')
-  if (produtoId) renderProductForm(produtoId)
-}
-
-function renderProductForm(produtoId) {
-  const produto = produtoId ? PRODUTOS.find(p => p.id === produtoId) : null
-  const isEdit = !!produto
+function renderProductForm() {
+  const mode     = productFormState.mode
+  const sourceId = productFormState.sourceId
+  const source   = sourceId ? PRODUTOS.find(p => p.id === sourceId) : null
+  const isEdit   = mode === 'edit'
+  const isDupl   = mode === 'duplicate'
   const isAdminOrEstoque = ['admin','estoque'].includes(appState.terminal)
 
-  if (!appState.gradeForm || !isEdit) {
-    if (produto) {
-      const tamanhos = [...new Set(produto.variacoes.map(v => v.tamanho))]
-      const cores    = [...new Set(produto.variacoes.map(v => v.cor))]
-      const celulas  = {}
-      produto.variacoes.forEach(v => {
-        celulas[`${v.tamanho}|${v.cor}`] = { sku: v.sku, barcode: v.barcode, estoque: v.estoque, estoqueMin: v.estoqueMin, preco: v.preco }
-      })
-      appState.gradeForm = { tamanhos, cores, celulas }
-    } else {
-      appState.gradeForm = { tamanhos: ['P','M','G'], cores: ['Preto'], celulas: {} }
-    }
-  }
+  const nomeValue     = isDupl && source ? `${source.nome} (cópia)` : source ? source.nome : ''
+  const categoriaVal  = source ? source.categoria : ''
+  const tecidoValue   = source ? source.tecido : ''
+  const estacaoValue  = source ? source.estacao : ''
+  const refValue      = isDupl ? '' : source ? source.ref : ''
+  const descValue     = source ? source.descricao : ''
+  const precoValue    = source ? source.variacoes[0].preco : ''
+  const custoValue    = source ? source.variacoes[0].custo : ''
+  const title         = isDupl ? 'Duplicar Produto' : isEdit ? 'Editar Produto' : 'Novo Produto'
 
-  const categorias = ['Blazers','Calças','Camisas','Vestidos','Saias','Acessórios','Casacos','Moletons']
-  const estacoes   = ['Verão','Inverno','Outono','Primavera','Todas']
+  const estacoes = ['Verão','Inverno','Outono','Primavera','Todas']
 
   document.getElementById('screen-product-form').innerHTML = `
     <div class="animate-fade-in max-w-4xl">
       <div class="section-header mb-6">
         <div class="flex items-center gap-3">
           <button onclick="navigateTo('screen-catalog')" class="btn-icon">${svgIcon('chevron-down',16)}</button>
-          <h1 class="t-display text-ink" style="font-size:28px">${isEdit ? 'Editar Produto' : 'Novo Produto'}</h1>
+          <h1 class="t-display text-ink" style="font-size:28px">${title}</h1>
+          ${isDupl ? `<span class="badge badge-accent">Duplicata</span>` : ''}
         </div>
       </div>
 
@@ -857,31 +967,36 @@ function renderProductForm(produtoId) {
             <div class="space-y-4">
               <div>
                 <label class="input-label" for="pf-nome">Nome do produto</label>
-                <input id="pf-nome" class="input" placeholder="Ex: Blazer Alfaiataria" value="${produto ? escHtml(produto.nome) : ''}">
+                <input id="pf-nome" class="input" placeholder="Ex: Blazer Alfaiataria" value="${escHtml(nomeValue)}">
               </div>
-              <div>
+              <div class="combo-wrap">
                 <label class="input-label" for="pf-categoria">Categoria</label>
-                <select id="pf-categoria" class="input">
-                  ${categorias.map(c => `<option value="${c}" ${produto && produto.categoria === c ? 'selected' : ''}>${c}</option>`).join('')}
-                </select>
+                <input id="pf-categoria" class="input" placeholder="Buscar ou criar categoria..."
+                  autocomplete="off"
+                  value="${escHtml(categoriaVal)}"
+                  oninput="categoryComboInput(this.value)"
+                  onfocus="categoryComboInput(this.value)"
+                  onblur="setTimeout(()=>document.getElementById('pf-categoria-dropdown')?.classList.add('hidden'),160)">
+                <div id="pf-categoria-dropdown" class="combo-dropdown hidden"></div>
               </div>
               <div>
                 <label class="input-label" for="pf-tecido">Tecido</label>
-                <input id="pf-tecido" class="input" placeholder="Ex: Viscose, Linho..." value="${produto ? escHtml(produto.tecido) : ''}">
+                <input id="pf-tecido" class="input" placeholder="Ex: Viscose, Linho..." value="${escHtml(tecidoValue)}">
               </div>
               <div>
                 <label class="input-label" for="pf-estacao">Estação</label>
                 <select id="pf-estacao" class="input">
-                  ${estacoes.map(e => `<option value="${e}" ${produto && produto.estacao === e ? 'selected' : ''}>${e}</option>`).join('')}
+                  ${estacoes.map(e => `<option value="${e}" ${estacaoValue === e ? 'selected' : ''}>${e}</option>`).join('')}
                 </select>
               </div>
               <div>
                 <label class="input-label" for="pf-ref">Referência de fábrica</label>
-                <input id="pf-ref" class="input" placeholder="Ex: BLZ-2026-089" value="${produto ? escHtml(produto.ref) : ''}">
+                <input id="pf-ref" class="input" placeholder="Ex: BLZ-2026-089" value="${escHtml(refValue)}">
+                ${isDupl ? `<p class="text-[12px] text-ink-3 mt-1">Limpo — informe uma referência única.</p>` : ''}
               </div>
               <div>
                 <label class="input-label" for="pf-desc">Descrição</label>
-                <textarea id="pf-desc" class="input" rows="3" placeholder="Descrição do produto...">${produto ? escHtml(produto.descricao) : ''}</textarea>
+                <textarea id="pf-desc" class="input" rows="3" placeholder="Descrição do produto...">${escHtml(descValue)}</textarea>
               </div>
             </div>
           </div>
@@ -893,11 +1008,11 @@ function renderProductForm(produtoId) {
             <div class="space-y-4">
               <div>
                 <label class="input-label" for="pf-preco">Preço de venda (R$)</label>
-                <input id="pf-preco" class="input" type="number" step="0.01" placeholder="0,00" value="${produto ? produto.variacoes[0].preco : ''}">
+                <input id="pf-preco" class="input" type="number" step="0.01" placeholder="0,00" value="${precoValue}">
               </div>
               <div>
                 <label class="input-label" for="pf-custo">Custo unitário (R$)</label>
-                <input id="pf-custo" class="input" type="number" step="0.01" placeholder="0,00" value="${produto ? produto.variacoes[0].custo : ''}">
+                <input id="pf-custo" class="input" type="number" step="0.01" placeholder="0,00" value="${custoValue}">
               </div>
             </div>
           </div>
@@ -910,12 +1025,14 @@ function renderProductForm(produtoId) {
             <div class="flex items-center justify-between mb-1">
               <p class="t-caps text-ink-3">Grade de variações</p>
               <div class="flex gap-2">
-                <button onclick="promptAddTamanho()" class="btn btn-ghost btn-sm">${svgIcon('plus',12)} Tamanho</button>
-                <button onclick="promptAddCor()" class="btn btn-ghost btn-sm">${svgIcon('plus',12)} Cor</button>
+                <button onclick="promptAddTamanho()" class="btn btn-ghost btn-sm"
+                  ${appState.gradeForm.inlineField ? 'disabled' : ''}>${svgIcon('plus',12)} Tamanho</button>
+                <button onclick="promptAddCor()" class="btn btn-ghost btn-sm"
+                  ${appState.gradeForm.inlineField ? 'disabled' : ''}>${svgIcon('plus',12)} Cor</button>
               </div>
             </div>
-            <p class="text-[11px] text-ink-3 mb-4">Cada célula da grade representa uma variação com estoque próprio.</p>
-            ${renderGradeFormTable()}
+            <p class="text-[12px] text-ink-3 mb-4">Cada célula da grade representa uma variação com estoque próprio.</p>
+            <div id="grade-table-container">${renderGradeFormTable()}</div>
           </div>
         </div>
       </div>
@@ -930,10 +1047,51 @@ function renderProductForm(produtoId) {
 }
 
 function renderGradeFormTable() {
-  const { tamanhos, cores, celulas } = appState.gradeForm
-  if (!tamanhos.length || !cores.length) {
-    return `<p class="text-[13px] text-ink-3 py-4">Adicione tamanhos e cores para montar a grade.</p>`
+  const { tamanhos, cores, celulas, inlineField, inlineValue } = appState.gradeForm
+
+  const noData = !tamanhos.length && !cores.length
+  if (noData && !inlineField) {
+    return `<div><p class="text-[13px] text-ink-3 py-4">Adicione tamanhos e cores para montar a grade.</p></div>`
   }
+
+  const inlineInput = (placeholder) => `
+    <div style="display:flex;align-items:center;gap:3px">
+      <input id="grade-inline-input" type="text"
+        style="width:68px;padding:4px 6px;font-size:13px;border:1px solid var(--accent);border-radius:4px;background:var(--elevated);outline:none;text-align:center"
+        placeholder="${placeholder}"
+        value="${escHtml(inlineValue || '')}"
+        oninput="appState.gradeForm.inlineValue=this.value"
+        onkeydown="gradeInlineKeydown(event)">
+      <button onmousedown="confirmInlineAdd()" class="btn-icon" style="padding:2px 4px;font-size:15px;line-height:1;color:var(--success)" title="Confirmar">✓</button>
+      <button onmousedown="cancelInlineAdd()" class="btn-icon" style="padding:2px 4px;font-size:15px;line-height:1" title="Cancelar">×</button>
+    </div>
+  `
+
+  const extraColHeader = inlineField === 'cor' ? `<th style="min-width:120px">${inlineInput('Ex: Azul')}</th>` : ''
+
+  const rows = tamanhos.map(t => {
+    const dataCells = cores.map(c => {
+      const key = `${t}|${c}`
+      const cell = celulas[key]
+      if (cell) {
+        return `
+          <td class="grade-cell-active" title="${escHtml(key)}">
+            <div style="font-family:var(--font-mono);font-size:11px;color:var(--ink-2)">${escHtml(cell.sku)}</div>
+            <div style="font-size:10px;color:var(--ink-3)">Est: ${cell.estoque} · Mín: ${cell.estoqueMin}</div>
+          </td>`
+      }
+      return `<td class="grade-cell-empty" onclick="activateCell('${escHtml(t)}','${escHtml(c)}')" title="Ativar ${t}/${c}">+</td>`
+    }).join('')
+    const extraCell = inlineField === 'cor' ? `<td class="grade-cell-empty" style="cursor:default;color:var(--ink-4)">—</td>` : ''
+    return `<tr><td class="row-header">${escHtml(t)}</td>${dataCells}${extraCell}</tr>`
+  }).join('')
+
+  const inlineTamanhoRow = inlineField === 'tamanho' ? `
+    <tr>
+      <td class="row-header" style="padding:6px 10px">${inlineInput('Ex: XG')}</td>
+      ${cores.map(() => `<td class="grade-cell-empty" style="cursor:default;color:var(--ink-4)">—</td>`).join('')}
+    </tr>` : ''
+
   return `
     <div style="overflow-x:auto">
       <table class="grade-table">
@@ -941,60 +1099,72 @@ function renderGradeFormTable() {
           <tr>
             <th>TAM \\ COR</th>
             ${cores.map(c => `<th>${escHtml(c)}</th>`).join('')}
+            ${extraColHeader}
           </tr>
         </thead>
-        <tbody>
-          ${tamanhos.map(t => `
-            <tr>
-              <td class="row-header">${escHtml(t)}</td>
-              ${cores.map(c => {
-                const key = `${t}|${c}`
-                const cell = celulas[key]
-                if (cell) {
-                  return `
-                    <td class="grade-cell-active" title="${escHtml(key)}">
-                      <div class="text-[11px] font-mono text-ink-2">${escHtml(cell.sku)}</div>
-                      <div class="text-[10px] text-ink-3">Est: ${cell.estoque} · Mín: ${cell.estoqueMin}</div>
-                    </td>
-                  `
-                } else {
-                  return `<td class="grade-cell-empty" onclick="activateCell('${escHtml(t)}','${escHtml(c)}')" title="Ativar ${t}/${c}">+</td>`
-                }
-              }).join('')}
-            </tr>
-          `).join('')}
-        </tbody>
+        <tbody>${rows}${inlineTamanhoRow}</tbody>
       </table>
     </div>
   `
 }
 
 function promptAddTamanho() {
-  const val = prompt('Nome do tamanho (ex: P, M, G, 36, T1):')
-  if (val && val.trim()) {
-    const t = val.trim()
-    if (!appState.gradeForm.tamanhos.includes(t)) {
-      appState.gradeForm.tamanhos.push(t)
-    }
-    const container = document.querySelector('#screen-product-form .card:last-of-type')
-    renderProductFormGradeOnly()
-  }
+  if (appState.gradeForm.inlineField) return
+  appState.gradeForm.inlineField = 'tamanho'
+  appState.gradeForm.inlineValue = ''
+  renderProductFormGradeOnly()
 }
 
 function promptAddCor() {
-  const val = prompt('Nome da cor (ex: Preto, Off White, Azul):')
-  if (val && val.trim()) {
-    const c = val.trim()
-    if (!appState.gradeForm.cores.includes(c)) {
-      appState.gradeForm.cores.push(c)
+  if (appState.gradeForm.inlineField) return
+  appState.gradeForm.inlineField = 'cor'
+  appState.gradeForm.inlineValue = ''
+  renderProductFormGradeOnly()
+}
+
+function gradeInlineKeydown(e) {
+  if (e.key === 'Enter') { e.preventDefault(); confirmInlineAdd() }
+  if (e.key === 'Escape') cancelInlineAdd()
+}
+
+function confirmInlineAdd() {
+  const val = (appState.gradeForm.inlineValue || '').trim()
+  if (val) {
+    if (appState.gradeForm.inlineField === 'tamanho') {
+      if (!appState.gradeForm.tamanhos.includes(val)) {
+        appState.gradeForm.tamanhos.push(val)
+        registerSize(val)
+      }
+    } else if (appState.gradeForm.inlineField === 'cor') {
+      if (!appState.gradeForm.cores.includes(val)) {
+        appState.gradeForm.cores.push(val)
+        registerColor(val)
+      }
     }
-    renderProductFormGradeOnly()
   }
+  appState.gradeForm.inlineField = null
+  appState.gradeForm.inlineValue = ''
+  renderProductFormGradeOnly()
+}
+
+function cancelInlineAdd() {
+  appState.gradeForm.inlineField = null
+  appState.gradeForm.inlineValue = ''
+  renderProductFormGradeOnly()
 }
 
 function renderProductFormGradeOnly() {
-  const gradeContainer = document.querySelector('#screen-product-form .lg\\:col-span-2 .card > div:last-of-type')
-  if (gradeContainer) gradeContainer.innerHTML = renderGradeFormTable()
+  const container = document.getElementById('grade-table-container')
+  if (container) {
+    container.innerHTML = renderGradeFormTable()
+    setTimeout(() => {
+      const inp = document.getElementById('grade-inline-input')
+      if (inp) inp.focus()
+    }, 0)
+  }
+  // Sync button disabled state
+  const btns = document.querySelectorAll('#screen-product-form .btn-ghost.btn-sm')
+  btns.forEach(b => { b.disabled = !!appState.gradeForm.inlineField })
 }
 
 function activateCell(tamanho, cor) {
@@ -1017,13 +1187,51 @@ function generateBarcode() {
   return '789' + String(Math.floor(Math.random() * 9999999999)).padStart(10,'0')
 }
 
+function categoryComboInput(query) {
+  const dropdown = document.getElementById('pf-categoria-dropdown')
+  if (!dropdown) return
+  const q = (query || '').trim().toLowerCase()
+  const filtered = CATALOG_META.categories.filter(c => !q || c.toLowerCase().includes(q))
+  const exactMatch = CATALOG_META.categories.some(c => c.toLowerCase() === q)
+  const showCreate = q.length > 0 && !exactMatch
+
+  if (!filtered.length && !showCreate) {
+    dropdown.classList.add('hidden')
+    return
+  }
+
+  dropdown.innerHTML = filtered.map(c =>
+    `<div class="combo-option" onmousedown="selectCategoryOption(event,'${escHtml(c)}')">${escHtml(c)}</div>`
+  ).join('') + (showCreate
+    ? `<div class="combo-option combo-option-create" onmousedown="selectCategoryOption(event,'${escHtml(query.trim())}',true)">+ Criar categoria "${escHtml(query.trim())}"</div>`
+    : '')
+  dropdown.classList.remove('hidden')
+}
+
+function selectCategoryOption(e, value, create = false) {
+  e.preventDefault()
+  if (create) registerCategory(value)
+  const input = document.getElementById('pf-categoria')
+  if (input) input.value = value
+  const dropdown = document.getElementById('pf-categoria-dropdown')
+  if (dropdown) dropdown.classList.add('hidden')
+}
+
 function saveProduct() {
   const nome = document.getElementById('pf-nome')?.value.trim()
   if (!nome) {
     showToast('Informe o nome do produto.', 'error')
     return
   }
-  showToast(`Produto "${nome}" salvo com sucesso.`, 'success')
+  const cat = document.getElementById('pf-categoria')?.value.trim()
+  if (!cat) {
+    showToast('Selecione ou crie uma categoria.', 'error')
+    return
+  }
+  registerCategory(cat)
+  const mode = productFormState.mode
+  const label = mode === 'duplicate' ? 'duplicado' : mode === 'edit' ? 'atualizado' : 'salvo'
+  showToast(`Produto "${nome}" ${label} com sucesso.`, 'success')
   setTimeout(() => navigateTo('screen-catalog'), 800)
 }
 
@@ -1106,7 +1314,11 @@ function searchProdutoEntrada(query) {
   const resultsEl = document.getElementById('entrada-resultados')
   if (!query.trim()) { resultsEl.innerHTML = ''; return }
   const q = query.toLowerCase()
-  const matches = PRODUTOS.filter(p => p.nome.toLowerCase().includes(q) || p.ref.toLowerCase().includes(q))
+  const matches = PRODUTOS.filter(p =>
+    p.nome.toLowerCase().includes(q) ||
+    p.ref.toLowerCase().includes(q) ||
+    p.variacoes.some(v => v.sku.toLowerCase().includes(q) || v.barcode.includes(q))
+  )
   if (!matches.length) {
     resultsEl.innerHTML = `<p class="text-[13px] text-ink-3 mt-2">Nenhum produto encontrado.</p>`
     return
@@ -1132,6 +1344,9 @@ function selectProdutoEntrada(produtoId) {
   if (!p) return
   appState.entradaSelectedProduto = produtoId
   appState.entradaQuantidades = {}
+  appState.entradaNovaVarMode = false
+  appState.entradaNovaVarTamanho = ''
+  appState.entradaNovaVarCor = ''
 
   document.getElementById('entrada-busca').value = p.nome
   document.getElementById('entrada-resultados').innerHTML = ''
@@ -1154,7 +1369,11 @@ function selectProdutoEntrada(produtoId) {
           </div>
         `).join('')}
       </div>
-      <div class="flex justify-end mt-4">
+      <div id="entrada-nova-var-form"></div>
+      <div class="flex items-center justify-between mt-4">
+        <button onclick="showNewVariationForm()" class="btn btn-ghost btn-sm" id="btn-nova-var">
+          ${svgIcon('plus', 12)} Adicionar nova variação
+        </button>
         <button onclick="confirmEntry()" class="btn btn-primary">
           ${svgIcon('check',13)} Confirmar Entrada
         </button>
@@ -1190,7 +1409,122 @@ function confirmEntry() {
   showToast(`Entrada registrada: ${total} unidade(s) em ${p ? p.nome : 'produto'}.`, 'success')
   appState.entradaSelectedProduto = null
   appState.entradaQuantidades = {}
+  appState.entradaNovaVarMode = false
+  appState.entradaNovaVarTamanho = ''
+  appState.entradaNovaVarCor = ''
   renderStockEntry()
+}
+
+function showNewVariationForm() {
+  const btn = document.getElementById('btn-nova-var')
+  if (btn) btn.disabled = true
+  appState.entradaNovaVarMode = true
+  appState.entradaNovaVarTamanho = ''
+  appState.entradaNovaVarCor = ''
+  renderNewVariationInlineForm()
+}
+
+function renderNewVariationInlineForm() {
+  const container = document.getElementById('entrada-nova-var-form')
+  if (!container) return
+  container.innerHTML = `
+    <div class="p-4 rounded-lg border border-accent/40 bg-accent-s mt-3 animate-fade-in">
+      <p class="text-[13px] font-medium text-ink mb-3">Nova variação para este produto</p>
+      <div class="grid grid-cols-2 gap-3 mb-3">
+        <div>
+          <label class="input-label">Tamanho</label>
+          <input type="text" id="nova-var-tamanho" class="input" placeholder="Ex: XG, 40..."
+            value="${escHtml(appState.entradaNovaVarTamanho)}"
+            oninput="appState.entradaNovaVarTamanho=this.value"
+            list="nova-var-tam-list">
+          <datalist id="nova-var-tam-list">
+            ${CATALOG_META.sizes.map(t => `<option value="${escHtml(t)}">`).join('')}
+          </datalist>
+        </div>
+        <div>
+          <label class="input-label">Cor</label>
+          <input type="text" id="nova-var-cor" class="input" placeholder="Ex: Azul Marinho..."
+            value="${escHtml(appState.entradaNovaVarCor)}"
+            oninput="appState.entradaNovaVarCor=this.value"
+            list="nova-var-cor-list">
+          <datalist id="nova-var-cor-list">
+            ${CATALOG_META.colors.map(c => `<option value="${escHtml(c)}">`).join('')}
+          </datalist>
+        </div>
+      </div>
+      <div class="mb-3" style="max-width:140px">
+        <label class="input-label">Quantidade recebida</label>
+        <input type="number" min="1" id="nova-var-qtd" class="input text-center"
+          style="padding:5px 8px;font-size:13px" placeholder="0"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();confirmNewVariation()}">
+      </div>
+      <div class="flex gap-2">
+        <button onclick="confirmNewVariation()" class="btn btn-primary btn-sm">
+          ${svgIcon('check', 12)} Confirmar variação
+        </button>
+        <button onclick="cancelNewVariation()" class="btn btn-ghost btn-sm">Cancelar</button>
+      </div>
+    </div>
+  `
+  setTimeout(() => document.getElementById('nova-var-tamanho')?.focus(), 0)
+}
+
+function confirmNewVariation() {
+  const responsavel = document.getElementById('entrada-responsavel')?.value
+  if (!responsavel) {
+    showToast('Selecione o responsável pelo recebimento.', 'error')
+    return
+  }
+  const tamanho = (appState.entradaNovaVarTamanho || '').trim()
+  const cor = (appState.entradaNovaVarCor || '').trim()
+  const qtd = parseInt(document.getElementById('nova-var-qtd')?.value) || 0
+  if (!tamanho) { showToast('Informe o tamanho.', 'error'); return }
+  if (!cor)     { showToast('Informe a cor.', 'error'); return }
+  if (qtd <= 0) { showToast('Informe a quantidade recebida (mínimo 1).', 'error'); return }
+
+  const p = PRODUTOS.find(x => x.id === appState.entradaSelectedProduto)
+  if (!p) return
+
+  const existing = p.variacoes.find(v => v.tamanho === tamanho && v.cor === cor)
+  if (existing) {
+    showToast(`Variação ${tamanho}/${cor} já existe. Use o campo de quantidade acima.`, 'warning')
+    return
+  }
+
+  const sku = generateSKU(p.ref || 'PROD', tamanho, cor)
+  const basePreco = p.variacoes[0]?.preco || 0
+  const baseCusto = p.variacoes[0]?.custo || 0
+  const novaVar = {
+    id: 'v' + Date.now(),
+    tamanho, cor, sku,
+    barcode: generateBarcode(),
+    preco: basePreco,
+    custo: baseCusto,
+    estoque: qtd,
+    estoqueMin: 2,
+    status: qtd === 0 ? 'critico' : qtd < 2 ? 'critico' : qtd <= 3 ? 'baixo' : 'normal',
+  }
+  p.variacoes.push(novaVar)
+  registerSize(tamanho)
+  registerColor(cor)
+  syncCatalogMeta()
+
+  appState.entradaNovaVarMode = false
+  appState.entradaNovaVarTamanho = ''
+  appState.entradaNovaVarCor = ''
+
+  showToast(`Nova variação ${tamanho}/${cor} criada com ${qtd} unidade(s).`, 'success')
+  selectProdutoEntrada(appState.entradaSelectedProduto)
+}
+
+function cancelNewVariation() {
+  appState.entradaNovaVarMode = false
+  appState.entradaNovaVarTamanho = ''
+  appState.entradaNovaVarCor = ''
+  const container = document.getElementById('entrada-nova-var-form')
+  if (container) container.innerHTML = ''
+  const btn = document.getElementById('btn-nova-var')
+  if (btn) btn.disabled = false
 }
 
 /* ============================================================
@@ -1220,33 +1554,25 @@ function renderPDV() {
         <!-- Coluna direita: carrinho + resumo -->
         <div style="width:320px;flex-shrink:0">
           <div class="card mb-4" style="padding:20px">
-            <p class="t-caps text-ink-3 mb-3">Cliente</p>
-            <select id="pdv-cliente" class="input mb-4">
-              <option value="">Sem cliente</option>
-              <option value="fernanda">Fernanda Costa</option>
-              <option value="mariana">Mariana Souza</option>
-              <option value="julia">Julia Alves</option>
-            </select>
-
             <p class="t-caps text-ink-3 mb-2">Vendedor principal <span class="text-danger">*</span></p>
             <select id="pdv-vendedor-1" class="input mb-3" onchange="updateVendedorState()">
               <option value="">Selecionar vendedor...</option>
-              ${VENDEDORES.map(v => `<option value="${v.id}">${escHtml(v.nome)}</option>`).join('')}
+              ${VENDEDORES.map(v => `<option value="${v.id}" ${appState.vendedorPrincipal === v.id ? 'selected' : ''}>${escHtml(v.nome)}</option>`).join('')}
             </select>
 
             <label class="flex items-center gap-2 cursor-pointer mb-3">
               <label class="toggle">
-                <input type="checkbox" id="pdv-toggle-comissao" onchange="toggleComissaoPDV()">
+                <input type="checkbox" id="pdv-toggle-comissao" onchange="toggleComissaoPDV()" ${appState.comissaoDividida ? 'checked' : ''}>
                 <span class="toggle-slider"></span>
               </label>
               <span class="text-[13px] text-ink-2">Dividir comissão</span>
             </label>
 
-            <div id="pdv-segundo-vendedor" class="hidden animate-fade-in">
+            <div id="pdv-segundo-vendedor" class="${appState.comissaoDividida ? '' : 'hidden'} animate-fade-in">
               <p class="t-caps text-ink-3 mb-2">Segundo vendedor</p>
               <select id="pdv-vendedor-2" class="input mb-2" onchange="updateVendedorState()">
                 <option value="">Selecionar vendedor...</option>
-                ${VENDEDORES.map(v => `<option value="${v.id}">${escHtml(v.nome)}</option>`).join('')}
+                ${VENDEDORES.map(v => `<option value="${v.id}" ${appState.segundoVendedor === v.id ? 'selected' : ''}>${escHtml(v.nome)}</option>`).join('')}
               </select>
               <div id="pdv-comissao-resumo" class="text-[11px] text-ink-3 mb-3"></div>
             </div>
@@ -1272,7 +1598,7 @@ function renderPDV() {
                 <span class="t-display text-ink" style="font-size:28px" id="pdv-total-value"></span>
               </div>
             </div>
-            <button id="btn-ir-pagamento" onclick="goToPayment()" class="btn btn-accent btn-full btn-lg mt-4" disabled>
+            <button id="btn-ir-pagamento" onclick="goToPayment()" class="btn btn-accent btn-full btn-lg mt-4">
               Ir para Pagamento
             </button>
           </div>
@@ -1281,6 +1607,7 @@ function renderPDV() {
     </div>
   `
   renderCart()
+  updateVendedorState()
 }
 
 function searchProdutoPDV(query) {
@@ -1289,6 +1616,7 @@ function searchProdutoPDV(query) {
   const q = query.toLowerCase()
   const matches = PRODUTOS.filter(p =>
     p.nome.toLowerCase().includes(q) ||
+    p.ref.toLowerCase().includes(q) ||
     p.variacoes.some(v => v.sku.toLowerCase().includes(q) || v.barcode.includes(q))
   ).slice(0, 5)
 
@@ -1490,7 +1818,7 @@ function renderCart() {
       </div>
     `
     if (totalArea) totalArea.classList.add('hidden')
-    if (btnPagar) btnPagar.disabled = true
+    if (btnPagar) btnPagar.disabled = false
     return
   }
 
@@ -1519,8 +1847,7 @@ function renderCart() {
     document.getElementById('pdv-total-value').textContent = formatCurrency(total)
   }
 
-  const vendedor1 = document.getElementById('pdv-vendedor-1')?.value
-  if (btnPagar) btnPagar.disabled = !vendedor1 || !appState.cart.length
+  if (btnPagar) btnPagar.disabled = false
 }
 
 function calcTotal() {
@@ -1530,42 +1857,49 @@ function calcTotal() {
 function toggleComissaoPDV() {
   const checked = document.getElementById('pdv-toggle-comissao')?.checked
   appState.comissaoDividida = checked
+  if (!checked) appState.segundoVendedor = null
   const area = document.getElementById('pdv-segundo-vendedor')
   if (area) area.classList.toggle('hidden', !checked)
+  updateVendedorState()
 }
 
 function updateVendedorState() {
   const v1 = document.getElementById('pdv-vendedor-1')?.value
   const v2 = document.getElementById('pdv-vendedor-2')?.value
   appState.vendedorPrincipal = v1 || null
-  appState.segundoVendedor = v2 || null
+  appState.segundoVendedor = appState.comissaoDividida ? (v2 || null) : null
+  const resumoEl = document.getElementById('pdv-comissao-resumo')
 
   if (appState.comissaoDividida && v1 && v2) {
     const vend1 = VENDEDORES.find(x => x.id === v1)
     const vend2 = VENDEDORES.find(x => x.id === v2)
     const total = calcTotal()
     const comissao = total * 0.03
-    const resumoEl = document.getElementById('pdv-comissao-resumo')
     if (resumoEl && vend1 && vend2) {
       resumoEl.innerHTML = `
         ${escHtml(vend1.nome)}: ${formatCurrency(comissao / 2)}<br>
         ${escHtml(vend2.nome)}: ${formatCurrency(comissao / 2)}
       `
     }
+  } else if (resumoEl) {
+    resumoEl.innerHTML = ''
   }
 
   const btn = document.getElementById('btn-ir-pagamento')
-  if (btn) btn.disabled = !v1 || !appState.cart.length
+  if (btn) btn.disabled = false
 }
 
 function goToPayment() {
   const v1 = document.getElementById('pdv-vendedor-1')?.value
+  const v2 = document.getElementById('pdv-vendedor-2')?.value
+  if (!appState.cart.length) {
+    showToast('Adicione ao menos um produto antes de ir para o pagamento.', 'error')
+    return
+  }
   if (!v1) { showToast('Selecione o vendedor principal.', 'error'); return }
-  if (!appState.cart.length) { showToast('Adicione produtos ao carrinho.', 'error'); return }
   appState.vendedorPrincipal = v1
-  appState.segundoVendedor = document.getElementById('pdv-vendedor-2')?.value || null
-  renderPayment()
-  showScreen('screen-payment')
+  appState.segundoVendedor = appState.comissaoDividida ? (v2 || null) : null
+  navigateTo('screen-payment')
 }
 
 // ===== PAGAMENTO =====
@@ -1689,7 +2023,7 @@ function processPayment() {
 
   setTimeout(() => {
     btn.innerHTML = `${svgIcon('check', 14)} Venda finalizada!`
-    btn.style.background = '#3D6B45'
+    btn.style.background = '#3D6B4F'
     setTimeout(() => {
       const total = calcTotal()
       const vend1 = VENDEDORES.find(x => x.id === appState.vendedorPrincipal)
@@ -1866,13 +2200,12 @@ function renderReportFinanceiro() {
   return `
     <div class="table-wrap">
       <table>
-        <thead><tr><th>ID Venda</th><th>Hora</th><th>Cliente</th><th>Método</th><th>Parcelas</th><th>Total</th><th>Status</th></tr></thead>
+        <thead><tr><th>ID Venda</th><th>Hora</th><th>Método</th><th>Parcelas</th><th>Total</th><th>Status</th></tr></thead>
         <tbody>
           ${VENDAS.map(v => `
             <tr>
               <td><span class="t-data text-ink-3">${escHtml(v.id)}</span></td>
               <td><span class="t-data">${escHtml(v.horario)}</span></td>
-              <td>${v.cliente ? escHtml(v.cliente) : '<span class="text-ink-3">—</span>'}</td>
               <td>${escHtml(v.metodo)}</td>
               <td><span class="t-data">${v.parcelas}x</span></td>
               <td><span class="t-data font-medium">${formatCurrency(v.total)}</span></td>
@@ -1933,7 +2266,7 @@ function renderReportCaixa() {
           <tr><td>Pix</td><td><span class="t-data">${VENDAS.filter(v=>v.metodo==='Pix').length}</span></td><td><span class="t-data">${formatCurrency(totalPix)}</span></td></tr>
           <tr><td>Cartão de Crédito</td><td><span class="t-data">${VENDAS.filter(v=>v.metodo==='Crédito').length}</span></td><td><span class="t-data">${formatCurrency(totalCredito)}</span></td></tr>
           <tr><td>Cartão de Débito</td><td><span class="t-data">${VENDAS.filter(v=>v.metodo==='Débito').length}</span></td><td><span class="t-data">${formatCurrency(totalDebito)}</span></td></tr>
-          <tr style="background:#EDE9E2">
+          <tr style="background:#EEECEA">
             <td class="font-medium">Total do caixa</td>
             <td><span class="t-data">${VENDAS.length}</span></td>
             <td><span class="t-data font-medium">${formatCurrency(total)}</span></td>
@@ -1948,13 +2281,12 @@ function renderReportFiscal() {
   return `
     <div class="table-wrap">
       <table>
-        <thead><tr><th>NF / Cupom</th><th>Data</th><th>Cliente</th><th>Valor</th><th>Status</th></tr></thead>
+        <thead><tr><th>NF / Cupom</th><th>Data</th><th>Valor</th><th>Status</th></tr></thead>
         <tbody>
           ${VENDAS.map((v, i) => `
             <tr>
               <td><span class="t-data text-ink-3">NF-${String(1000+i).padStart(6,'0')}</span></td>
               <td><span class="t-data">08/06/2026 ${escHtml(v.horario)}</span></td>
-              <td>${v.cliente ? escHtml(v.cliente) : '<span class="text-ink-3">Consumidor Final</span>'}</td>
               <td><span class="t-data">${formatCurrency(v.total)}</span></td>
               <td><span class="badge badge-normal">Emitida</span></td>
             </tr>
@@ -2042,7 +2374,7 @@ function openPromoModal() {
       </div>
       <div>
         <label class="input-label" for="promo-escopo">Escopo</label>
-        <input id="promo-escopo" class="input" placeholder="Ex: Coleção Verão, Clientes VIP...">
+        <input id="promo-escopo" class="input" placeholder="Ex: Coleção Verão, Categoria Blazers...">
       </div>
       <div class="grid grid-cols-2 gap-4">
         <div>
