@@ -177,6 +177,10 @@ input, select, textarea, button { font-family: inherit; }
   .screen-body { padding: 16px; }
 }
 
+@media (min-width: 768px) and (max-width: 1023px) {
+  .screen-body { padding: 24px; }
+}
+
 /* ===== SIDEBAR INTERIOR BORDERS ===== */
 /* Logo zone */
 #sidebar > div:first-child {
@@ -467,7 +471,8 @@ select.input {
   background: var(--elevated);
   border: 1px solid var(--border);
   border-radius: 10px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 .table-wrap table { width: 100%; border-collapse: collapse; }
 .table-wrap thead th {
@@ -927,6 +932,18 @@ select.input {
   padding: 5px 11px;
 }
 
+/* ===== PDV CART COLUMN ===== */
+.pdv-cart-col {
+  width: 320px;
+  flex-shrink: 0;
+}
+@media (min-width: 1280px) {
+  .pdv-cart-col { width: 360px; }
+}
+@media (min-width: 1536px) {
+  .pdv-cart-col { width: 420px; }
+}
+
 /* ===== PAYMENT CARDS ===== */
 .payment-card {
   border: 1px solid var(--border);
@@ -975,6 +992,70 @@ select.input {
 
 /* ===== HIDDEN UTILITY — must keep display:none !important ===== */
 .hidden { display: none !important; }
+
+/* ===== NOTIFICATION PANEL ===== */
+#notif-panel {
+  position: fixed;
+  z-index: 40;
+  background: var(--elevated, #FDFCF9);
+  border: 1px solid #D8D2C8;
+  border-radius: 10px;
+  box-shadow: 0 12px 48px rgba(28,24,20,.11), 0 4px 16px rgba(28,24,20,.07);
+  width: 340px;
+  max-height: 480px;
+  overflow-y: auto;
+  animation: fade-in-scale 160ms cubic-bezier(0.23,1,0.32,1) forwards;
+}
+@media (max-width: 639px) {
+  #notif-panel { width: calc(100vw - 32px); right: 16px !important; }
+}
+.notif-item {
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #E6E1D8;
+  cursor: pointer;
+  transition: background 100ms ease;
+  align-items: flex-start;
+}
+.notif-item:last-child { border-bottom: none; }
+.notif-item:hover { background: #F4F0EA; }
+.notif-item.unread { background: #FDFCF9; }
+.notif-item.read { background: transparent; }
+.notif-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--danger);
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+.notif-dot.read { background: transparent; }
+
+/* ===== GRADE VARIACAO CHIPS ===== */
+.grade-var-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--elevated);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 500;
+}
+.grade-var-chip .chip-remove {
+  font-size: 13px;
+  line-height: 1;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: var(--ink-4);
+  transition: color 100ms ease;
+}
+.grade-var-chip .chip-remove:hover { color: var(--danger); }
 
 /* ===== REDUCED MOTION ===== */
 @media (prefers-reduced-motion: reduce) {

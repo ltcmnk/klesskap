@@ -190,6 +190,145 @@ Acesse `http://localhost:8080` no navegador.
 
 ---
 
+## Telas do Sistema
+
+O Klesskap é composto por **10 telas** organizadas em fluxos de trabalho
+distintos para cada perfil de acesso.
+
+---
+
+### 1. Login
+**Arquivo:** `screenshots/tela-login.png`
+**Acesso:** Público (pré-autenticação)
+
+Tela inicial do sistema. Permite autenticação via e-mail e senha com
+validação de credenciais. Disponibiliza atalhos de acesso rápido para os
+três perfis de demonstração: Admin, Terminal de Estoque e Terminal de Vendas.
+
+---
+
+### 2. Dashboard
+**Arquivo:** `screenshots/tela-dashboard.png`
+**Acesso:** Todos os perfis
+
+Painel principal exibido logo após o login. Apresenta as métricas do dia
+em tempo real: total de vendas, número de transações, ticket médio e alertas
+de estoque crítico. Inclui gráfico de barras com evolução de vendas nos
+últimos 7 dias, painel de alertas de variações com estoque abaixo do mínimo
+e tabela das últimas vendas realizadas.
+
+---
+
+### 3. Catálogo de Produtos
+**Arquivo:** `screenshots/tela-catalogo.png`
+**Acesso:** Admin, Terminal de Estoque
+
+Lista completa de produtos cadastrados com filtros por categoria, tamanho,
+cor, estação e status de estoque. Cada produto pode ser expandido para
+exibir todas as suas variações (tamanho + cor) com SKU, código de barras,
+preço, custo, estoque atual e status. Permite acesso rápido ao formulário
+de edição e à entrada de mercadoria.
+
+---
+
+### 4. Novo Produto / Editar Produto
+**Arquivo:** `screenshots/tela-formulario-produto.png`
+**Acesso:** Admin, Terminal de Estoque
+
+Formulário completo de cadastro e edição de produtos. Campos base incluem
+nome, categoria, tecido, estação, referência de fábrica e descrição.
+Campos financeiros (preço de venda e custo) visíveis apenas para Admin e
+Estoque. A grade de variações é uma tabela interativa de tamanho × cor onde
+cada célula ativa gera automaticamente SKU e código de barras próprios.
+Tamanhos e cores são gerenciados com chips removíveis e inputs inline.
+
+---
+
+### 5. Entrada de Mercadoria
+**Arquivo:** `screenshots/tela-entrada-estoque.png`
+**Acesso:** Admin, Terminal de Estoque
+
+Tela para registro de recebimento físico de mercadorias. O responsável
+pelo recebimento é selecionado da equipe de estoque cadastrada. A busca
+de produto suporta pesquisa por nome ou referência de fábrica. Ao
+selecionar um produto, exibe todas as variações com input de quantidade
+recebida. Permite também cadastrar novas variações diretamente nesta tela.
+Inclui histórico de movimentações (entradas e saídas por venda).
+
+---
+
+### 6. PDV — Frente de Caixa
+**Arquivo:** `screenshots/tela-pdv.png`
+**Acesso:** Admin, Terminal de Vendas
+
+Terminal de ponto de venda com layout em dois painéis. O painel esquerdo
+oferece busca de produtos por nome, SKU ou código de barras, com seletor
+de variação (tamanho e cor) e indicação de disponibilidade em estoque.
+O painel direito exibe o carrinho de compras com quantidades ajustáveis,
+subtotal e total. Inclui seleção de vendedor principal, opção de divisão
+de comissão entre dois vendedores e vinculação de cliente.
+
+---
+
+### 7. Pagamento
+**Arquivo:** `screenshots/tela-pagamento.png`
+**Acesso:** Admin, Terminal de Vendas (a partir do PDV)
+
+Tela de finalização de venda. Exibe o resumo dos itens do carrinho,
+vendedores envolvidos e total a pagar. Suporta quatro métodos de
+pagamento: Dinheiro (com cálculo de troco), Pix, Cartão de Crédito
+(com parcelamento configurável em 1×, 2×, 3×, 4×, 5×, 6×, 10× ou 12×)
+e Cartão de Débito. Ao finalizar, registra a venda, atualiza o estoque
+e retorna ao PDV para nova venda.
+
+---
+
+### 8. Relatórios
+**Arquivo:** `screenshots/tela-relatorios.png`
+**Acesso:** Admin, Terminal de Vendas (visão restrita para Estoque)
+
+Central de relatórios com filtro por período (Hoje, Esta Semana, Este Mês)
+e intervalo de datas personalizado. Organizado em quatro abas:
+**Financeiro** — detalhamento de todas as vendas do período com método e
+status; **Vendas por Vendedor** — desempenho individual com total vendido,
+comissão gerada e progresso de meta; **Fechamento de Caixa** — resumo por
+método de pagamento com totais e percentuais; **Fiscal** — relação de itens
+vendidos para controle tributário. Exportação de relatório em PDF disponível.
+
+---
+
+### 9. Promoções
+**Arquivo:** `screenshots/tela-promocoes.png`
+**Acesso:** Admin
+
+Gerenciamento de campanhas promocionais ativas e encerradas. Lista as
+promoções com nome, escopo de aplicação, desconto, período de vigência e
+status. Permite criar novas promoções via formulário em modal com campos
+de nome, escopo, desconto (percentual ou valor fixo) e datas de início e
+fim. Promoções ativas ficam marcadas com badge verde; encerradas, com badge
+cinza.
+
+---
+
+### 10. Usuários
+**Arquivo:** `screenshots/tela-usuarios.png`
+**Acesso:** Admin (exclusivo)
+
+Painel de gestão de usuários do sistema. Exibe todos os usuários cadastrados
+com nome, e-mail, perfil de acesso (Admin/Proprietário, Gerente de Estoque
+ou Operador/Vendedor) e status ativo/inativo via toggle. Permite ativar e
+desativar usuários individualmente. O proprietário logado não pode
+desativar sua própria conta. Criação de novo usuário disponível (em
+desenvolvimento na versão atual).
+
+---
+
+> **Nota:** Os perfis de acesso determinam quais telas são visíveis no menu
+> lateral. Telas restritas exibem uma mensagem de acesso negado ao invés
+> do conteúdo, sem redirecionar o usuário.
+
+---
+
 ## Equipe
 
 Desenvolvido por **Valkiria Inc.**

@@ -225,6 +225,39 @@ const VENDAS_SEMANA = [
   { dia:'Dom', valor:980  },
 ]
 
+const NOTIFICACOES = [
+  {
+    id: 'n1', tipo: 'estoque', lida: false,
+    titulo: 'Estoque crítico — Blazer Alfaiataria G/Preto',
+    detalhe: 'Apenas 1 unidade restante. Mínimo: 2.',
+    tempo: '5 min atrás', icone: 'box'
+  },
+  {
+    id: 'n2', tipo: 'estoque', lida: false,
+    titulo: 'Estoque zerado — Camisa Linho G/Branco',
+    detalhe: '0 unidades em estoque. Reposição necessária.',
+    tempo: '18 min atrás', icone: 'box'
+  },
+  {
+    id: 'n3', tipo: 'venda', lida: false,
+    titulo: 'Venda finalizada — VND-2026-0342',
+    detalhe: 'R$ 699,80 · Cartão de Crédito 3x · Letícia Oliveira',
+    tempo: '42 min atrás', icone: 'shopping-cart'
+  },
+  {
+    id: 'n4', tipo: 'venda', lida: true,
+    titulo: 'Venda finalizada — VND-2026-0341',
+    detalhe: 'R$ 439,80 · Pix · Amanda Costa',
+    tempo: '1h atrás', icone: 'shopping-cart'
+  },
+  {
+    id: 'n5', tipo: 'sistema', lida: true,
+    titulo: 'Meta do dia atingida',
+    detalhe: 'Vendas hoje superaram R$ 1.500,00.',
+    tempo: '2h atrás', icone: 'trending-up'
+  },
+]
+
 const PROMOCOES = [
   { id:1, nome:'Promoção Inverno 2026', escopo:'Coleção Inverno', desconto:'10%',   inicio:'2026-05-01', fim:'2026-06-30', status:'ativa'     },
   { id:2, nome:'Desconto Maio',         escopo:'Coleção Selecionada', desconto:'R$ 50', inicio:'2026-05-01', fim:'2026-05-31', status:'encerrada' },
@@ -261,9 +294,11 @@ let appState = {
   entradaNovaVarMode: false,
   entradaNovaVarTamanho: '',
   entradaNovaVarCor: '',
-  gradeForm: { tamanhos: [], cores: [], celulas: {} },
+  entradaBuscaPreFill: null,
+  gradeForm: { tamanhos: [], cores: [], celulas: {}, inlineField: null, inlineValue: '' },
   paymentMetodo: null,
   paymentParcelas: 1,
+  notifPanelOpen: false,
 }
 
 // ===== UTILITÁRIOS =====
@@ -476,6 +511,10 @@ function handleLogin() {
   renderSidebar(user.terminal)
   setupNavigation()
   navigateTo('screen-dashboard')
+
+  const bellBtn = document.getElementById('btn-bell')
+  if (bellBtn) bellBtn.onclick = toggleNotifPanel
+  updateBellDot()
 }
 
 function handleLogout() {
@@ -488,9 +527,13 @@ function handleLogout() {
     reportTab: 'financeiro', reportPeriodo: 'hoje',
     entradaSelectedProduto: null, entradaQuantidades: {},
     entradaNovaVarMode: false, entradaNovaVarTamanho: '', entradaNovaVarCor: '',
-    gradeForm: { tamanhos:[], cores:[], celulas:{} },
+    entradaBuscaPreFill: null,
+    gradeForm: { tamanhos:[], cores:[], celulas:{}, inlineField: null, inlineValue: '' },
     paymentMetodo: null, paymentParcelas: 1,
+    notifPanelOpen: false,
   }
+  const existingPanel = document.getElementById('notif-panel')
+  if (existingPanel) existingPanel.remove()
   resetProductFormState()
   document.getElementById('app-shell').classList.add('hidden')
   document.getElementById('screen-login').classList.remove('hidden')
@@ -641,7 +684,7 @@ function renderChartSVG(data) {
   const lineY = PADDING.top + chartH
   return `
     <div style="overflow-x:auto">
-      <svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px;display:block">
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
         <line x1="${PADDING.left}" y1="${lineY}" x2="${W - PADDING.right}" y2="${lineY}" stroke="#D8D2C8" stroke-width="1"/>
         ${bars}
       </svg>
@@ -663,14 +706,14 @@ function renderSalesTable(vendas) {
       <table>
         <thead>
           <tr>
-            <th>ID</th><th>Horário</th><th>Vendedor</th>
+            <th class="hidden sm:table-cell">ID</th><th>Horário</th><th>Vendedor</th>
             <th>Método</th><th>Total</th><th>Status</th>
           </tr>
         </thead>
         <tbody>
           ${vendas.map(v => `
             <tr>
-              <td><span class="t-data text-ink-3">${escHtml(v.id)}</span></td>
+              <td class="hidden sm:table-cell"><span class="t-data text-ink-3">${escHtml(v.id)}</span></td>
               <td><span class="t-data">${escHtml(v.horario)}</span></td>
               <td>
                 <span>${escHtml(v.vendedorPrincipal)}</span>
@@ -936,11 +979,14 @@ function renderProductForm() {
   const isDupl   = mode === 'duplicate'
   const isAdminOrEstoque = ['admin','estoque'].includes(appState.terminal)
 
-  const nomeValue     = isDupl && source ? `${source.nome} (cópia)` : source ? source.nome : ''
+  const preFill = appState.entradaBuscaPreFill
+  if (preFill) appState.entradaBuscaPreFill = null
+
+  const nomeValue     = preFill?.nome || (isDupl && source ? `${source.nome} (cópia)` : source ? source.nome : '')
   const categoriaVal  = source ? source.categoria : ''
   const tecidoValue   = source ? source.tecido : ''
   const estacaoValue  = source ? source.estacao : ''
-  const refValue      = isDupl ? '' : source ? source.ref : ''
+  const refValue      = (preFill?.ref !== undefined ? preFill.ref : null) ?? (isDupl ? '' : source ? source.ref : '')
   const descValue     = source ? source.descricao : ''
   const precoValue    = source ? source.variacoes[0].preco : ''
   const custoValue    = source ? source.variacoes[0].custo : ''
@@ -949,7 +995,7 @@ function renderProductForm() {
   const estacoes = ['Verão','Inverno','Outono','Primavera','Todas']
 
   document.getElementById('screen-product-form').innerHTML = `
-    <div class="animate-fade-in max-w-4xl">
+    <div class="animate-fade-in w-full">
       <div class="section-header mb-6">
         <div class="flex items-center gap-3">
           <button onclick="navigateTo('screen-catalog')" class="btn-icon">${svgIcon('chevron-down',16)}</button>
@@ -1025,12 +1071,12 @@ function renderProductForm() {
             <div class="flex items-center justify-between mb-1">
               <p class="t-caps text-ink-3">Grade de variações</p>
               <div class="flex gap-2">
-                <button onclick="promptAddTamanho()" class="btn btn-ghost btn-sm"
-                  ${appState.gradeForm.inlineField ? 'disabled' : ''}>${svgIcon('plus',12)} Tamanho</button>
-                <button onclick="promptAddCor()" class="btn btn-ghost btn-sm"
-                  ${appState.gradeForm.inlineField ? 'disabled' : ''}>${svgIcon('plus',12)} Cor</button>
+                <button onclick="promptAddTamanho()" id="btn-add-tamanho" class="btn btn-ghost btn-sm">${svgIcon('plus',12)} Tamanho</button>
+                <button onclick="promptAddCor()" id="btn-add-cor" class="btn btn-ghost btn-sm">${svgIcon('plus',12)} Cor</button>
               </div>
             </div>
+            <div id="grade-add-tamanho-area"></div>
+            <div id="grade-add-cor-area"></div>
             <p class="text-[12px] text-ink-3 mb-4">Cada célula da grade representa uma variação com estoque próprio.</p>
             <div id="grade-table-container">${renderGradeFormTable()}</div>
           </div>
@@ -1047,27 +1093,39 @@ function renderProductForm() {
 }
 
 function renderGradeFormTable() {
-  const { tamanhos, cores, celulas, inlineField, inlineValue } = appState.gradeForm
+  const { tamanhos, cores, celulas } = appState.gradeForm
 
-  const noData = !tamanhos.length && !cores.length
-  if (noData && !inlineField) {
+  if (!tamanhos.length && !cores.length) {
     return `<div><p class="text-[13px] text-ink-3 py-4">Adicione tamanhos e cores para montar a grade.</p></div>`
   }
 
-  const inlineInput = (placeholder) => `
-    <div style="display:flex;align-items:center;gap:3px">
-      <input id="grade-inline-input" type="text"
-        style="width:68px;padding:4px 6px;font-size:13px;border:1px solid var(--accent);border-radius:4px;background:var(--elevated);outline:none;text-align:center"
-        placeholder="${placeholder}"
-        value="${escHtml(inlineValue || '')}"
-        oninput="appState.gradeForm.inlineValue=this.value"
-        onkeydown="gradeInlineKeydown(event)">
-      <button onmousedown="confirmInlineAdd()" class="btn-icon" style="padding:2px 4px;font-size:15px;line-height:1;color:var(--success)" title="Confirmar">✓</button>
-      <button onmousedown="cancelInlineAdd()" class="btn-icon" style="padding:2px 4px;font-size:15px;line-height:1" title="Cancelar">×</button>
+  const tamChips = tamanhos.map(t => `
+    <span class="grade-var-chip">
+      ${escHtml(t)}
+      <button class="chip-remove" onmousedown="removeTamanho('${escHtml(t)}')" title="Remover ${escHtml(t)}">×</button>
+    </span>
+  `).join('')
+
+  const corChips = cores.map(c => `
+    <span class="grade-var-chip">
+      ${escHtml(c)}
+      <button class="chip-remove" onmousedown="removeCor('${escHtml(c)}')" title="Remover ${escHtml(c)}">×</button>
+    </span>
+  `).join('')
+
+  const chipsHtml = `
+    <div class="flex flex-wrap items-center gap-x-4 gap-y-2 mb-4 pb-3 border-b border-border">
+      <div class="flex flex-wrap items-center gap-1.5">
+        <span class="t-caps text-ink-4" style="font-size:10px">TAM</span>
+        ${tamChips || '<span class="text-[11px] text-ink-4">—</span>'}
+      </div>
+      <span class="text-ink-4" style="font-size:12px">|</span>
+      <div class="flex flex-wrap items-center gap-1.5">
+        <span class="t-caps text-ink-4" style="font-size:10px">COR</span>
+        ${corChips || '<span class="text-[11px] text-ink-4">—</span>'}
+      </div>
     </div>
   `
-
-  const extraColHeader = inlineField === 'cor' ? `<th style="min-width:120px">${inlineInput('Ex: Azul')}</th>` : ''
 
   const rows = tamanhos.map(t => {
     const dataCells = cores.map(c => {
@@ -1082,27 +1140,20 @@ function renderGradeFormTable() {
       }
       return `<td class="grade-cell-empty" onclick="activateCell('${escHtml(t)}','${escHtml(c)}')" title="Ativar ${t}/${c}">+</td>`
     }).join('')
-    const extraCell = inlineField === 'cor' ? `<td class="grade-cell-empty" style="cursor:default;color:var(--ink-4)">—</td>` : ''
-    return `<tr><td class="row-header">${escHtml(t)}</td>${dataCells}${extraCell}</tr>`
+    return `<tr><td class="row-header">${escHtml(t)}</td>${dataCells}</tr>`
   }).join('')
 
-  const inlineTamanhoRow = inlineField === 'tamanho' ? `
-    <tr>
-      <td class="row-header" style="padding:6px 10px">${inlineInput('Ex: XG')}</td>
-      ${cores.map(() => `<td class="grade-cell-empty" style="cursor:default;color:var(--ink-4)">—</td>`).join('')}
-    </tr>` : ''
-
   return `
+    ${chipsHtml}
     <div style="overflow-x:auto">
       <table class="grade-table">
         <thead>
           <tr>
             <th>TAM \\ COR</th>
             ${cores.map(c => `<th>${escHtml(c)}</th>`).join('')}
-            ${extraColHeader}
           </tr>
         </thead>
-        <tbody>${rows}${inlineTamanhoRow}</tbody>
+        <tbody>${rows}</tbody>
       </table>
     </div>
   `
@@ -1112,14 +1163,35 @@ function promptAddTamanho() {
   if (appState.gradeForm.inlineField) return
   appState.gradeForm.inlineField = 'tamanho'
   appState.gradeForm.inlineValue = ''
-  renderProductFormGradeOnly()
+  renderGradeInlineArea('tamanho')
+  syncGradeButtonState()
 }
 
 function promptAddCor() {
   if (appState.gradeForm.inlineField) return
   appState.gradeForm.inlineField = 'cor'
   appState.gradeForm.inlineValue = ''
-  renderProductFormGradeOnly()
+  renderGradeInlineArea('cor')
+  syncGradeButtonState()
+}
+
+function renderGradeInlineArea(field) {
+  const areaId = field === 'tamanho' ? 'grade-add-tamanho-area' : 'grade-add-cor-area'
+  const placeholder = field === 'tamanho' ? 'Ex: XG, 44...' : 'Ex: Azul Marinho...'
+  const area = document.getElementById(areaId)
+  if (!area) return
+  area.innerHTML = `
+    <div class="flex items-center gap-2 py-2 animate-fade-in">
+      <input id="grade-inline-input" type="text" class="input"
+        style="max-width:180px;padding:6px 10px;font-size:13px"
+        placeholder="${placeholder}"
+        oninput="appState.gradeForm.inlineValue=this.value"
+        onkeydown="gradeInlineKeydown(event)">
+      <button onmousedown="confirmInlineAdd()" class="btn btn-accent btn-sm">Adicionar</button>
+      <button onmousedown="cancelInlineAdd()" class="btn btn-ghost btn-sm">Cancelar</button>
+    </div>
+  `
+  setTimeout(() => document.getElementById('grade-inline-input')?.focus(), 0)
 }
 
 function gradeInlineKeydown(e) {
@@ -1142,14 +1214,48 @@ function confirmInlineAdd() {
       }
     }
   }
+  clearGradeInlineAreas()
   appState.gradeForm.inlineField = null
   appState.gradeForm.inlineValue = ''
   renderProductFormGradeOnly()
+  syncGradeButtonState()
 }
 
 function cancelInlineAdd() {
+  clearGradeInlineAreas()
   appState.gradeForm.inlineField = null
   appState.gradeForm.inlineValue = ''
+  syncGradeButtonState()
+}
+
+function clearGradeInlineAreas() {
+  const ta = document.getElementById('grade-add-tamanho-area')
+  const ca = document.getElementById('grade-add-cor-area')
+  if (ta) ta.innerHTML = ''
+  if (ca) ca.innerHTML = ''
+}
+
+function syncGradeButtonState() {
+  const btnTam = document.getElementById('btn-add-tamanho')
+  const btnCor = document.getElementById('btn-add-cor')
+  const isOpen = !!appState.gradeForm.inlineField
+  if (btnTam) btnTam.disabled = isOpen
+  if (btnCor) btnCor.disabled = isOpen
+}
+
+function removeTamanho(t) {
+  appState.gradeForm.tamanhos = appState.gradeForm.tamanhos.filter(x => x !== t)
+  Object.keys(appState.gradeForm.celulas).forEach(key => {
+    if (key.split('|')[0] === t) delete appState.gradeForm.celulas[key]
+  })
+  renderProductFormGradeOnly()
+}
+
+function removeCor(c) {
+  appState.gradeForm.cores = appState.gradeForm.cores.filter(x => x !== c)
+  Object.keys(appState.gradeForm.celulas).forEach(key => {
+    if (key.split('|')[1] === c) delete appState.gradeForm.celulas[key]
+  })
   renderProductFormGradeOnly()
 }
 
@@ -1157,14 +1263,7 @@ function renderProductFormGradeOnly() {
   const container = document.getElementById('grade-table-container')
   if (container) {
     container.innerHTML = renderGradeFormTable()
-    setTimeout(() => {
-      const inp = document.getElementById('grade-inline-input')
-      if (inp) inp.focus()
-    }, 0)
   }
-  // Sync button disabled state
-  const btns = document.querySelectorAll('#screen-product-form .btn-ghost.btn-sm')
-  btns.forEach(b => { b.disabled = !!appState.gradeForm.inlineField })
 }
 
 function activateCell(tamanho, cor) {
@@ -1239,7 +1338,7 @@ function saveProduct() {
 
 function renderStockEntry() {
   document.getElementById('screen-stock-entry').innerHTML = `
-    <div class="animate-fade-in max-w-3xl">
+    <div class="animate-fade-in">
       <div class="section-header mb-6">
         <h1 class="t-display text-ink" style="font-size:28px">Entrada de Mercadoria</h1>
       </div>
@@ -1320,7 +1419,13 @@ function searchProdutoEntrada(query) {
     p.variacoes.some(v => v.sku.toLowerCase().includes(q) || v.barcode.includes(q))
   )
   if (!matches.length) {
-    resultsEl.innerHTML = `<p class="text-[13px] text-ink-3 mt-2">Nenhum produto encontrado.</p>`
+    appState.entradaBuscaPreFill = { nome: query.trim(), ref: '' }
+    resultsEl.innerHTML = `
+      <p class="text-[13px] text-ink-3 mt-2">Nenhum produto encontrado.</p>
+      <button onclick="navegarCadastrarNovo()" class="btn btn-ghost btn-sm mt-2">
+        ${svgIcon('plus', 12)} Cadastrar novo produto com este nome
+      </button>
+    `
     return
   }
   resultsEl.innerHTML = `
@@ -1337,6 +1442,15 @@ function searchProdutoEntrada(query) {
       `).join('')}
     </div>
   `
+}
+
+function navegarCadastrarNovo() {
+  // appState.entradaBuscaPreFill already set by searchProdutoEntrada
+  resetProductFormState()
+  renderProductForm()
+  showScreen('screen-product-form')
+  updateNavActive('screen-product-form')
+  closeSidebar()
 }
 
 function selectProdutoEntrada(produtoId) {
@@ -1427,46 +1541,117 @@ function showNewVariationForm() {
 function renderNewVariationInlineForm() {
   const container = document.getElementById('entrada-nova-var-form')
   if (!container) return
+
+  const tamanhoOpts = ['PP','P','M','G','GG','XG','34','36','38','40','42','44']
+  const corOpts = ['Preto','Branco','Off White','Bege','Cinza','Azul','Verde','Vermelho','Rosa','Marrom']
+  const produtoAtual = PRODUTOS.find(x => x.id === appState.entradaSelectedProduto)
+  const precoBase = produtoAtual?.variacoes[0]?.preco || ''
+
   container.innerHTML = `
     <div class="p-4 rounded-lg border border-accent/40 bg-accent-s mt-3 animate-fade-in">
       <p class="text-[13px] font-medium text-ink mb-3">Nova variação para este produto</p>
       <div class="grid grid-cols-2 gap-3 mb-3">
         <div>
           <label class="input-label">Tamanho</label>
-          <input type="text" id="nova-var-tamanho" class="input" placeholder="Ex: XG, 40..."
-            value="${escHtml(appState.entradaNovaVarTamanho)}"
-            oninput="appState.entradaNovaVarTamanho=this.value"
-            list="nova-var-tam-list">
-          <datalist id="nova-var-tam-list">
-            ${CATALOG_META.sizes.map(t => `<option value="${escHtml(t)}">`).join('')}
-          </datalist>
+          <select id="nova-var-tamanho-select" class="input" onchange="onNovaVarTamanhoChange(this.value)">
+            <option value="">Selecionar...</option>
+            ${tamanhoOpts.map(t => `<option value="${escHtml(t)}">${escHtml(t)}</option>`).join('')}
+            <option value="outro">Outro...</option>
+          </select>
+          <input type="text" id="nova-var-tamanho-input" class="input mt-1 hidden" placeholder="Digite o tamanho...">
         </div>
         <div>
           <label class="input-label">Cor</label>
-          <input type="text" id="nova-var-cor" class="input" placeholder="Ex: Azul Marinho..."
-            value="${escHtml(appState.entradaNovaVarCor)}"
-            oninput="appState.entradaNovaVarCor=this.value"
-            list="nova-var-cor-list">
-          <datalist id="nova-var-cor-list">
-            ${CATALOG_META.colors.map(c => `<option value="${escHtml(c)}">`).join('')}
-          </datalist>
+          <select id="nova-var-cor-select" class="input" onchange="onNovaVarCorChange(this.value)">
+            <option value="">Selecionar...</option>
+            ${corOpts.map(c => `<option value="${escHtml(c)}">${escHtml(c)}</option>`).join('')}
+            <option value="outra">Outra...</option>
+          </select>
+          <input type="text" id="nova-var-cor-input" class="input mt-1 hidden" placeholder="Digite a cor...">
         </div>
       </div>
-      <div class="mb-3" style="max-width:140px">
-        <label class="input-label">Quantidade recebida</label>
-        <input type="number" min="1" id="nova-var-qtd" class="input text-center"
-          style="padding:5px 8px;font-size:13px" placeholder="0"
-          onkeydown="if(event.key==='Enter'){event.preventDefault();confirmNewVariation()}">
+      <div class="grid grid-cols-3 gap-3 mb-3">
+        <div>
+          <label class="input-label">Qtd. inicial</label>
+          <input type="number" min="0" id="nova-var-qtd" class="input text-center"
+            style="padding:7px 8px;font-size:13px" placeholder="0">
+        </div>
+        <div>
+          <label class="input-label">Est. mínimo</label>
+          <input type="number" min="0" id="nova-var-estmin" class="input text-center"
+            style="padding:7px 8px;font-size:13px" value="2">
+        </div>
+        <div>
+          <label class="input-label">Preço R$</label>
+          <input type="number" min="0" step="0.01" id="nova-var-preco" class="input"
+            style="padding:7px 8px;font-size:13px" value="${precoBase}" placeholder="0,00">
+        </div>
       </div>
       <div class="flex gap-2">
-        <button onclick="confirmNewVariation()" class="btn btn-primary btn-sm">
-          ${svgIcon('check', 12)} Confirmar variação
+        <button onclick="confirmNewVariation()" class="btn btn-accent btn-sm">
+          ${svgIcon('check', 12)} Adicionar Variação
         </button>
         <button onclick="cancelNewVariation()" class="btn btn-ghost btn-sm">Cancelar</button>
       </div>
     </div>
   `
-  setTimeout(() => document.getElementById('nova-var-tamanho')?.focus(), 0)
+  setTimeout(() => document.getElementById('nova-var-tamanho-select')?.focus(), 0)
+}
+
+function onNovaVarTamanhoChange(val) {
+  const input = document.getElementById('nova-var-tamanho-input')
+  if (!input) return
+  if (val === 'outro') {
+    input.classList.remove('hidden')
+    setTimeout(() => input.focus(), 0)
+  } else {
+    input.classList.add('hidden')
+    input.value = ''
+  }
+}
+
+function onNovaVarCorChange(val) {
+  const input = document.getElementById('nova-var-cor-input')
+  if (!input) return
+  if (val === 'outra') {
+    input.classList.remove('hidden')
+    setTimeout(() => input.focus(), 0)
+  } else {
+    input.classList.add('hidden')
+    input.value = ''
+  }
+}
+
+function addNewVariacaoToProduct(produtoId, dados) {
+  const p = PRODUTOS.find(x => x.id === produtoId)
+  if (!p) return false
+
+  const { tamanho, cor, qtd, estoqueMin, preco } = dados
+  const minVal = estoqueMin || 2
+
+  const existing = p.variacoes.find(v => v.tamanho === tamanho && v.cor === cor)
+  if (existing) {
+    showToast(`Variação ${tamanho}/${cor} já existe. Use o campo de quantidade acima.`, 'warning')
+    return false
+  }
+
+  const sku = generateSKU(p.ref || 'PROD', tamanho, cor)
+  const novaVar = {
+    id: 'v' + Date.now(),
+    tamanho, cor, sku,
+    barcode: generateBarcode(),
+    preco: preco || p.variacoes[0]?.preco || 0,
+    custo: p.variacoes[0]?.custo || 0,
+    estoque: qtd,
+    estoqueMin: minVal,
+    status: qtd === 0 ? 'critico' : qtd < minVal ? 'critico' : qtd <= minVal * 1.5 ? 'baixo' : 'normal',
+  }
+  p.variacoes.push(novaVar)
+  registerSize(tamanho)
+  registerColor(cor)
+  syncCatalogMeta()
+  appState.entradaQuantidades[novaVar.id] = qtd
+  return true
 }
 
 function confirmNewVariation() {
@@ -1475,45 +1660,31 @@ function confirmNewVariation() {
     showToast('Selecione o responsável pelo recebimento.', 'error')
     return
   }
-  const tamanho = (appState.entradaNovaVarTamanho || '').trim()
-  const cor = (appState.entradaNovaVarCor || '').trim()
-  const qtd = parseInt(document.getElementById('nova-var-qtd')?.value) || 0
+
+  const tamSelect = document.getElementById('nova-var-tamanho-select')?.value
+  const tamInput  = (document.getElementById('nova-var-tamanho-input')?.value || '').trim()
+  const tamanho   = tamSelect === 'outro' ? tamInput : tamSelect
+
+  const corSelect = document.getElementById('nova-var-cor-select')?.value
+  const corInput  = (document.getElementById('nova-var-cor-input')?.value || '').trim()
+  const cor       = corSelect === 'outra' ? corInput : corSelect
+
+  const qtd      = parseInt(document.getElementById('nova-var-qtd')?.value) || 0
+  const estMin   = parseInt(document.getElementById('nova-var-estmin')?.value) || 2
+  const preco    = parseFloat(document.getElementById('nova-var-preco')?.value) || 0
+
   if (!tamanho) { showToast('Informe o tamanho.', 'error'); return }
   if (!cor)     { showToast('Informe a cor.', 'error'); return }
-  if (qtd <= 0) { showToast('Informe a quantidade recebida (mínimo 1).', 'error'); return }
+  if (qtd < 0)  { showToast('Quantidade não pode ser negativa.', 'error'); return }
 
-  const p = PRODUTOS.find(x => x.id === appState.entradaSelectedProduto)
-  if (!p) return
-
-  const existing = p.variacoes.find(v => v.tamanho === tamanho && v.cor === cor)
-  if (existing) {
-    showToast(`Variação ${tamanho}/${cor} já existe. Use o campo de quantidade acima.`, 'warning')
-    return
-  }
-
-  const sku = generateSKU(p.ref || 'PROD', tamanho, cor)
-  const basePreco = p.variacoes[0]?.preco || 0
-  const baseCusto = p.variacoes[0]?.custo || 0
-  const novaVar = {
-    id: 'v' + Date.now(),
-    tamanho, cor, sku,
-    barcode: generateBarcode(),
-    preco: basePreco,
-    custo: baseCusto,
-    estoque: qtd,
-    estoqueMin: 2,
-    status: qtd === 0 ? 'critico' : qtd < 2 ? 'critico' : qtd <= 3 ? 'baixo' : 'normal',
-  }
-  p.variacoes.push(novaVar)
-  registerSize(tamanho)
-  registerColor(cor)
-  syncCatalogMeta()
+  const ok = addNewVariacaoToProduct(appState.entradaSelectedProduto, { tamanho, cor, qtd, estoqueMin: estMin, preco })
+  if (!ok) return
 
   appState.entradaNovaVarMode = false
   appState.entradaNovaVarTamanho = ''
   appState.entradaNovaVarCor = ''
 
-  showToast(`Nova variação ${tamanho}/${cor} criada com ${qtd} unidade(s).`, 'success')
+  showToast(`Nova variação ${tamanho}/${cor} adicionada com ${qtd} unidade(s).`, 'success')
   selectProdutoEntrada(appState.entradaSelectedProduto)
 }
 
@@ -1552,7 +1723,7 @@ function renderPDV() {
         </div>
 
         <!-- Coluna direita: carrinho + resumo -->
-        <div style="width:320px;flex-shrink:0">
+        <div class="pdv-cart-col">
           <div class="card mb-4" style="padding:20px">
             <p class="t-caps text-ink-3 mb-2">Vendedor principal <span class="text-danger">*</span></p>
             <select id="pdv-vendedor-1" class="input mb-3" onchange="updateVendedorState()">
@@ -1910,7 +2081,7 @@ function renderPayment() {
   const vend2 = appState.segundoVendedor ? VENDEDORES.find(x => x.id === appState.segundoVendedor) : null
 
   document.getElementById('screen-payment').innerHTML = `
-    <div class="animate-fade-in max-w-2xl">
+    <div class="animate-fade-in max-w-3xl">
       <div class="section-header mb-6">
         <div class="flex items-center gap-3">
           <button onclick="navigateTo('screen-pdv')" class="btn-icon">${svgIcon('chevron-down', 16)}</button>
@@ -2509,6 +2680,103 @@ function toggleUserStatus(id) {
   const row = document.getElementById(`user-row-${id}`)
   if (row) row.outerHTML = renderUserRow(u)
   showToast(`${u.nome} ${u.ativo ? 'ativado' : 'desativado'}.`, u.ativo ? 'success' : 'warning')
+}
+
+// ===== NOTIFICAÇÕES =====
+
+function updateBellDot() {
+  const unread = NOTIFICACOES.filter(n => !n.lida).length
+  const dot = document.getElementById('bell-dot')
+  if (dot) dot.classList.toggle('hidden', unread === 0)
+}
+
+function toggleNotifPanel() {
+  appState.notifPanelOpen = !appState.notifPanelOpen
+  if (appState.notifPanelOpen) {
+    renderNotifPanel()
+    setTimeout(() => {
+      document.addEventListener('click', notifOutsideClickHandler)
+    }, 0)
+  } else {
+    const panel = document.getElementById('notif-panel')
+    if (panel) panel.remove()
+    document.removeEventListener('click', notifOutsideClickHandler)
+  }
+}
+
+function notifOutsideClickHandler(e) {
+  const panel = document.getElementById('notif-panel')
+  const bellBtn = document.getElementById('btn-bell')
+  if (panel && !panel.contains(e.target) && bellBtn && !bellBtn.contains(e.target)) {
+    appState.notifPanelOpen = false
+    panel.remove()
+    document.removeEventListener('click', notifOutsideClickHandler)
+  }
+}
+
+function renderNotifPanel() {
+  const existing = document.getElementById('notif-panel')
+  if (existing) existing.remove()
+
+  const bellBtn = document.getElementById('btn-bell')
+  if (!bellBtn) return
+  const rect = bellBtn.getBoundingClientRect()
+
+  const iconBgMap = {
+    estoque: `background:var(--warning-s);color:var(--warning)`,
+    venda:   `background:var(--accent-s);color:var(--accent)`,
+    sistema: `background:var(--success-s);color:var(--success)`,
+  }
+
+  const panel = document.createElement('div')
+  panel.id = 'notif-panel'
+  panel.style.cssText = `top:${rect.bottom + 8}px;right:${window.innerWidth - rect.right}px`
+  panel.innerHTML = `
+    <div style="padding:14px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <span class="t-caps text-ink" style="font-size:11px">Notificações</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;color:var(--accent);cursor:pointer" onclick="marcarTodasLidas()">Marcar todas como lidas</span>
+        <button class="btn-icon" onclick="toggleNotifPanel()" style="padding:4px" aria-label="Fechar">${svgIcon('x', 13)}</button>
+      </div>
+    </div>
+    <div>
+      ${NOTIFICACOES.map(n => `
+        <div class="notif-item ${n.lida ? 'read' : 'unread'}" onclick="marcarLida('${n.id}')">
+          <div class="notif-dot ${n.lida ? 'read' : ''}"></div>
+          <div style="width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;${iconBgMap[n.tipo] || ''}">
+            ${svgIcon(n.icone, 14)}
+          </div>
+          <div style="flex:1;min-width:0">
+            <p style="font-size:13px;font-weight:500;color:var(--ink);line-height:1.4">${escHtml(n.titulo)}</p>
+            <p style="font-size:11px;color:var(--ink-3);line-height:1.4;margin-top:1px">${escHtml(n.detalhe)}</p>
+            <p style="font-size:10px;color:var(--ink-4);margin-top:3px">${escHtml(n.tempo)}</p>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    <div style="padding:12px 16px;border-top:1px solid var(--border);text-align:center">
+      <span style="font-size:12px;color:var(--accent);cursor:pointer"
+        onclick="navigateTo('screen-reports');appState.notifPanelOpen=false;document.getElementById('notif-panel')?.remove()">
+        Ver histórico completo
+      </span>
+    </div>
+  `
+  document.body.appendChild(panel)
+}
+
+function marcarLida(id) {
+  const n = NOTIFICACOES.find(x => x.id === id)
+  if (n && !n.lida) {
+    n.lida = true
+    updateBellDot()
+    if (appState.notifPanelOpen) renderNotifPanel()
+  }
+}
+
+function marcarTodasLidas() {
+  NOTIFICACOES.forEach(n => { n.lida = true })
+  updateBellDot()
+  if (appState.notifPanelOpen) renderNotifPanel()
 }
 
 // ===== INIT =====
