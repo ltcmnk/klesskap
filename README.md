@@ -2,6 +2,8 @@
 
 > **Sistema de PDV e gestão de estoque para varejo de moda** — do norueguês *klesskap* (guarda-roupa): organização elegante de cada peça.
 
+ **Demo ao vivo:** https://klesskap-eight.vercel.app
+
 ![Versão](https://img.shields.io/badge/versão-3.0-8B6F3E?style=flat-square)
 ![Status](https://img.shields.io/badge/status-protótipo-B8B2AA?style=flat-square)
 ![Stack](https://img.shields.io/badge/stack-HTML%20%2F%20CSS%20%2F%20JS-1C1814?style=flat-square)
