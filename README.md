@@ -2,7 +2,7 @@
 
 > **Sistema de PDV e gestão de estoque para varejo de moda** — do norueguês *klesskap* (guarda-roupa): organização elegante de cada peça.
 
- **Demo ao vivo:** https://klesskap-eight.vercel.app
+**Demo ao vivo:** https://klesskap-eight.vercel.app
 
 ![Versão](https://img.shields.io/badge/versão-3.0-8B6F3E?style=flat-square)
 ![Status](https://img.shields.io/badge/status-protótipo-B8B2AA?style=flat-square)
@@ -189,18 +189,84 @@ Acesse `http://localhost:8080` no navegador.
 
 ## Capturas de tela
 
-*Em breve. As telas abaixo serão documentadas com screenshots do protótipo em execução.*
+As telas abaixo foram capturadas no protótipo em execução.
 
-| Tela | Descrição |
-|---|---|
-| Login | Tela de acesso com chips de perfil e validação de credenciais |
-| Dashboard | Métricas do dia, gráfico semanal e alertas de estoque |
-| Catálogo | Tabela de produtos com filtros e expansão de grade de variações |
-| Frente de Caixa (PDV) | Busca de produto, picker de variação, carrinho e seleção de vendedor |
-| Pagamento | Seleção de método, parcelamento, troco e emissão de recibo |
-| Relatórios | Abas financeiro, por vendedor, fechamento de caixa e fiscal |
-| Entrada de Mercadoria | Busca de produto, quantidade por variação e histórico |
-| Promoções / Usuários | Gestão de promoções ativas e controle de acesso de equipe |
+<div align="center">
+
+### Login e visão geral
+
+</div>
+
+<table>
+	<tr>
+		<td width="50%" valign="top">
+			<a href="screenshots/01-login.png"><img src="screenshots/01-login.png" alt="Tela de login" /></a>
+			<p align="center"><strong>Login</strong></p>
+		</td>
+		<td width="50%" valign="top">
+			<a href="screenshots/02-dashboard.png"><img src="screenshots/02-dashboard.png" alt="Dashboard" /></a>
+			<p align="center"><strong>Dashboard</strong></p>
+		</td>
+	</tr>
+	<tr>
+		<td width="50%" valign="top">
+			<a href="screenshots/03-catalogo.png"><img src="screenshots/03-catalogo.png" alt="Catálogo" /></a>
+			<p align="center"><strong>Catálogo</strong></p>
+		</td>
+		<td width="50%" valign="top">
+			<a href="screenshots/04-novo-produto.png"><img src="screenshots/04-novo-produto.png" alt="Novo produto" /></a>
+			<p align="center"><strong>Novo Produto</strong></p>
+		</td>
+	</tr>
+</table>
+
+<div align="center">
+
+### Operação de loja
+
+</div>
+
+<table>
+	<tr>
+		<td width="50%" valign="top">
+			<a href="screenshots/05-entrada-mercadoria.png"><img src="screenshots/05-entrada-mercadoria.png" alt="Entrada de mercadoria" /></a>
+			<p align="center"><strong>Entrada de Mercadoria</strong></p>
+		</td>
+		<td width="50%" valign="top">
+			<a href="screenshots/06-pdv.png"><img src="screenshots/06-pdv.png" alt="Frente de caixa" /></a>
+			<p align="center"><strong>Frente de Caixa (PDV)</strong></p>
+		</td>
+	</tr>
+	<tr>
+		<td width="50%" valign="top">
+			<a href="screenshots/07-pagamento.png"><img src="screenshots/07-pagamento.png" alt="Pagamento" /></a>
+			<p align="center"><strong>Pagamento</strong></p>
+		</td>
+		<td width="50%" valign="top">
+			<a href="screenshots/08-relatorios.png"><img src="screenshots/08-relatorios.png" alt="Relatórios" /></a>
+			<p align="center"><strong>Relatórios</strong></p>
+		</td>
+	</tr>
+</table>
+
+<div align="center">
+
+### Gestão
+
+</div>
+
+<table>
+	<tr>
+		<td width="50%" valign="top">
+			<a href="screenshots/09-promocoes.png"><img src="screenshots/09-promocoes.png" alt="Promoções" /></a>
+			<p align="center"><strong>Promoções</strong></p>
+		</td>
+		<td width="50%" valign="top">
+			<a href="screenshots/10-usuarios.png"><img src="screenshots/10-usuarios.png" alt="Usuários" /></a>
+			<p align="center"><strong>Usuários</strong></p>
+		</td>
+	</tr>
+</table>
 
 ---
 
